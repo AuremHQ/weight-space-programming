@@ -31,7 +31,7 @@ Stars do not come from a good README. They come from a demo with real numbers th
 
 ## Publishing checklist (when the demo is ready)
 
-- [ ] Repo name chosen (suggestion: `weight-space-doctor`)
+- [ ] Repo name: `weight-space-programming`
 - [ ] License: MIT (see LICENSE)
 - [ ] Topics/tags for discovery: `weight-space`, `llm`, `interpretability`, `model-editing`, `open-weights`, `ai-safety`, `machine-learning`
 - [ ] README status badge flipped from "Demo in progress" to "Demo live"
