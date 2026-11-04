@@ -51,11 +51,23 @@ flowchart LR
     D -->|Not improved| F[Discard — ship nothing]
 ```
 
-1. **Detect** — Find the weights in your repo, run your model on your own test prompts, diagnose the failure. No weights, no test prompts, or a model that's too large → the skill refuses, clearly, and does nothing.
+1. **Detect** — Find the weights in your repo, run your model on your own test prompts, diagnose the failure, and measure it first (how often, how bad) — that baseline is what the eval gate compares against. No weights, no test prompts, or a model that's too large → the skill refuses, clearly, and does nothing.
 2. **Fix** — Subtract the offending direction from the identified layers only. Edits are tiny by design: anything over 1% of weights is rejected as "too broad."
 3. **Eval-gate** — Re-run the *same* prompts with the *same* settings. The fix ships only if the primary metric improves by at least 5 points with no guard-metric regression worse than 2 points. Otherwise the edit is discarded. **No gate, no ship.**
 
 Full rules, refusals, and safety gates: see [SKILL.md](SKILL.md).
+
+## How this differs from gradient descent
+
+Gradient descent trains: data + loss → gradients → many small updates → a retrained model. This skill is a different path: one direct edit, no data, no gradients, no training loop — and the eval gate decides whether it ships.
+
+```mermaid
+flowchart LR
+    G[Data + loss] --> H[Gradients] --> I[Many small updates] --> J[Retrained model]
+    K[Diagnosed direction] --> L[One subtraction] --> M[Re-test + eval gate] --> N[Reviewable fix — or nothing]
+```
+
+If you want training, use training. If you want one stubborn failure removed without retraining, use this.
 
 ---
 

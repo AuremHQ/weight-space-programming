@@ -4,12 +4,16 @@ Use this skill on **your own small open-weight model** — one that lives in you
 
 It does not work on closed API models, it does not train anything, and it never runs in real time. It is a batch job: load weights, run tests, reason, edit, re-test.
 
+## How this differs from gradient descent
+
+Gradient descent trains a model: data plus a loss function produce gradients, and many small updates (w ← w − η∇L) slowly move the weights. This skill does none of that. It makes one reasoned, direct edit — subtracting a diagnosed direction from a small set of layers — with no data, no loss function, no gradients, and no training loop. Then the eval gate proves whether that single edit helped, on your own prompts. If you want training, use training. If you want one stubborn failure removed without retraining, use this.
+
 ## The 3 steps
 
 ### Step 1 — Detect
 
 1. Find the weights: `safetensors` files, PyTorch `.bin` files, plus `config.json`. Read the model card for known issues (e.g. "prone to thinking loops").
-2. Run the model on **your own test prompts** — the prompts that show the failure. Record what actually goes wrong: repetition loops (same text until the token limit), stuck behaviour, degenerate outputs.
+2. Run the model on **your own test prompts** — the prompts that show the failure. Record what actually goes wrong: repetition loops (same text until the token limit), stuck behaviour, degenerate outputs. Before editing anything, measure the failure as your baseline: on how many of your prompts it happens, and how bad it is (for example, loops to the token limit vs an occasional slip). The eval gate compares against these numbers, so a baseline is not optional.
 3. Diagnose the way the MIT experiment did: compare the model's internal signals on failing outputs vs succeeding outputs, and identify the layers/components whose direction tracks the failure. This diagnosis is heuristic + reasoned — never present it as exact science.
 
 **Hard refusals — if any of these is true, stop and say so plainly. Do nothing else:**
