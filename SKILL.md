@@ -12,7 +12,7 @@ Gradient descent trains a model: data plus a loss function produce gradients, an
 
 ### Step 0 — Try the cheap fix first
 
-Before touching any weight, try the cheap fixes: a prompt change, a decoding or settings change (for example, thinking mode off, temperature, stop rules). If the failure goes away, that fix belongs in your baseline — not in a weight edit. Edit weights only for a failure that survives the cheap fixes. A settings change that matches an edit's gain is a better result than the edit, because it costs nothing and risks nothing.
+Before touching any weight, try the cheap fixes: a prompt change, a decoding or settings change (for example, thinking mode off, temperature, stop rules). If the failure goes away, that fix belongs in your baseline — not in a weight edit. Edit weights only for a failure that survives the cheap fixes. A settings change that matches an edit's gain is a better result than the edit, because it costs nothing and risks nothing. Temperature is the first knob to try: record the serving temperature, try one lower and one higher setting, and measure each on its own. Never change temperature and weights in the same run — if both change at once, you will not know which one helped.
 
 ### Step 1 — Detect
 
@@ -41,13 +41,14 @@ Before touching any weight, try the cheap fixes: a prompt change, a decoding or 
 ### Step 3 — Eval-gate (no gate, no ship)
 
 - Re-run the **same prompts with the same sampling settings** before and after.
+- Check the gate at the serving temperature and at greedy (temperature 0) as well. An edit that passes at one temperature and fails at another is not ready to ship.
 - Ship only if: primary metric improves by **at least 5 points** AND no guard metric regresses by **more than 2 points** AND no neighbouring behaviour regresses by **more than 2 points**. Neighbours are tasks or concepts close to the edited behaviour (for example, nearby facts or related skills) — edits disturb neighbours, so test them, do not assume they are untouched. (Starting values — tune them for your task and say what you used.)
 - If the gate fails → discard the edit, publish the before/after table anyway, and ship nothing.
 - If the gate passes → propose the change as a reviewable package containing, no exceptions:
   1. The edit script (reproducible from the original weights).
   2. A before/after metrics table.
   3. Layers touched, weight count, percentage changed.
-  4. The name of the model that produced the edit, the tools it used (for example, a Python sandbox, forward passes), and how many eval passes were spent. Tools and pass counts are part of the result — an edit made with heavy tooling must never be reported as if it came from weights alone.
+  4. The name of the model that produced the edit, the tools it used (for example, a Python sandbox, forward passes), and how many eval passes were spent. Tools and pass counts are part of the result — an edit made with heavy tooling must never be reported as if it came from weights alone. Also record the sampling settings used, including temperature — a result without its temperature is not reproducible.
   5. This note: "Weight-space editing was demonstrated with GPT-6 Astra and is unproven for other models. This edit passed the eval gate below; verify independently before use."
   6. The edited weights as a separate artifact — never a silent overwrite of the original files.
 
