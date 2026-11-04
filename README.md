@@ -1,4 +1,4 @@
-# Weight-Space Doctor
+# Weight-Space Programming
 
 > Fix small AI models by editing their weights directly — no retraining, no fine-tuning, no gradients.
 
@@ -62,7 +62,7 @@ Full rules, refusals, and safety gates: see [SKILL.md](SKILL.md).
 ## What's inside
 
 - **[RESEARCH.md](RESEARCH.md)** — the MIT research, explained simply: what weight-space programming is, all 8 experiments with numbers, and where it fails.
-- **[SKILL.md](SKILL.md)** — the Weight-Space Doctor skill: the 3-step workflow, hard refusal rules, and safety gates.
+- **[SKILL.md](SKILL.md)** — the Weight-Space Programming skill: the 3-step workflow, hard refusal rules, and safety gates.
 - **[DEMO-PLAN.md](DEMO-PLAN.md)** — how the runnable demo is being built, and the exact numbers it must show before anyone should trust it.
 
 ---
