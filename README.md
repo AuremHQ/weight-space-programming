@@ -1,6 +1,6 @@
 # Weight-Space Programming
 
-> Fix small AI models by editing their weights directly — no retraining, no fine-tuning, no gradients.
+> Try to fix small AI models by editing their weights directly — no retraining, no fine-tuning, no gradients — with an eval gate deciding whether any edit ships.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Research: MIT CSAIL](https://img.shields.io/badge/Research-MIT%20CSAIL-blue.svg)](RESEARCH.md)
@@ -9,7 +9,7 @@
 
 > From the team building **Ora by Aurem — https://auremcto.com** — an AI engineer for non-technical founders. ORA itself stays private; this skill is public so anyone can use it on their own models.
 
-> ⭐ **Star this repo** if you want the runnable demo with real numbers — it lands here next.
+> ⭐ **Star this repo** if you want the real-model demo — the toy demo's numbers are already in [kit/README.md](kit/README.md), and the small-open-model demo lands here next.
 > 🔁 **Share it** with anyone running a small open model with one stubborn failure.
 
 ---
@@ -67,7 +67,7 @@ flowchart LR
     K[Diagnosed direction] --> L[One subtraction] --> M[Re-test + eval gate] --> N[Reviewable fix — or nothing]
 ```
 
-If you want training, use training. If you want one stubborn failure removed without retraining, use this.
+If you want training, use training. If you want to try removing one stubborn failure without retraining, use this.
 
 ---
 
@@ -122,6 +122,8 @@ For agents and harnesses, the same pipeline is an MCP server (requires `pip inst
 2. Get a diagnosis and a tiny, reviewable edit.
 3. Let the eval gate decide — if the numbers don't improve, nothing ships.
 
+> Note: today the runnable kit runs the toy pipeline — see [kit/README.md](kit/README.md) for what it proves. A real model needs a runner plus a frontier-class editor; neither ships in v0.1.0 yet.
+
 That's the whole deal. No retraining bill, no blind trust.
 
 ---
@@ -131,14 +133,14 @@ That's the whole deal. No retraining bill, no blind trust.
 - The MIT work is a **blog post, not a peer-reviewed paper**, and has not yet been independently replicated.
 - Demonstrated so far mainly with **one editor model (GPT-6 Astra)**. Whether other models do this equally well is **unproven** — our demo will name the model behind every edit.
 - This is a **batch job, not real-time**: load weights, run evaluations, reason, edit, re-evaluate. It never runs live inside a chat reply.
-- **Our own demo numbers are not here yet.** That is exactly what the next milestone delivers — star the repo to see them land.
+- **Our own real-model demo numbers are not here yet.** The toy demo's numbers are in [kit/README.md](kit/README.md) — the small-open-model demo is exactly what the next milestone delivers, so star the repo to see them land.
 
 ---
 
 ## Roadmap
 
 - [x] Research summary + skill spec
-- [ ] **Runnable demo: loop-fix on a small open model, with reproducible before/after numbers** ← next
+- [ ] **Runnable demo: loop-fix on a small open model, with reproducible before/after numbers** ← next (toy demo done — see [kit/](kit/))
 - [ ] Demo video/GIF + example report
 - [ ] First community test: your model, your failure, your numbers
 
