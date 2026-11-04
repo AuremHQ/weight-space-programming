@@ -76,6 +76,33 @@ If you want training, use training. If you want one stubborn failure removed wit
 - **[RESEARCH.md](RESEARCH.md)** — the MIT research, explained simply: what weight-space programming is, all 8 experiments with numbers, and where it fails.
 - **[SKILL.md](SKILL.md)** — the Weight-Space Programming skill: the 3-step workflow, hard refusal rules, and safety gates.
 - **[DEMO-PLAN.md](DEMO-PLAN.md)** — how the runnable demo is being built, and the exact numbers it must show before anyone should trust it.
+- **[kit/](kit/)** — the runnable kit: engine, CLI, MCP server, task pack, and a toy demo with real numbers.
+
+---
+
+## Run it
+
+The skill is runnable as `wsp-kit`. From a clone:
+
+```
+pip install ./kit
+wsp demo
+```
+
+That runs the toy pipeline end to end and writes `report.json` plus the edited weights. The numbers are from the toy model, not a language model — see [kit/README.md](kit/README.md) for what the demo proves and what it does not.
+
+For agents and harnesses, the same pipeline is an MCP server (requires `pip install 'wsp-kit[mcp]'` first):
+
+```json
+{
+  "mcpServers": {
+    "wsp-kit": {
+      "command": "python",
+      "args": ["-m", "wsp.mcp_server"]
+    }
+  }
+}
+```
 
 ---
 
