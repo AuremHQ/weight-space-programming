@@ -1,4 +1,4 @@
-# Weight-Space Doctor — The Skill
+# Weight-Space Programming — The Skill
 
 Use this skill on **your own small open-weight model** — one that lives in your repo or on your server, in a model, app, or piece of software you control.
 

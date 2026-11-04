@@ -8,7 +8,7 @@ Stars do not come from a good README. They come from a demo with real numbers th
 
 1. Pick a small open-weight model (under 3B parameters) with a visible, repeatable failure — ideally a reasoning loop like Qwen's, or another single narrow failure.
 2. Record the failure on a fixed prompt set with fixed sampling settings: how often it loops, how often it finishes, baseline scores.
-3. Run the Weight-Space Doctor skill (SKILL.md): diagnose the direction, subtract it from the identified layers, record layers touched and percentage of weights changed.
+3. Run the Weight-Space Programming skill (SKILL.md): diagnose the direction, subtract it from the identified layers, record layers touched and percentage of weights changed.
 4. Re-run the identical prompt set with identical settings. Publish the before/after table.
 5. Publish the edit script so anyone can reproduce the edit from the original weights, plus the edited weights as a separate artifact.
 
