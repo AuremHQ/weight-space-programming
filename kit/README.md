@@ -114,7 +114,7 @@ always go to a new directory.
 
 **Eval files (format v1).** A JSON file with three prompt sets —
 `failing`, `good`, `neighbours` — each with a scorer (`loop`,
-`contains`, `finish`, or `sequence`) and prompts. The pipeline
+`contains`, `finish`, `sequence`, or `distinct`) and prompts. The pipeline
 detects whatever failure your eval shows (loops, wrong answers,
 format breaks) and runs the same Step 0 → Step 1 → Step 2 → Step 3
 flow. See `evals/` for the demo eval file and its format notes.
@@ -304,8 +304,10 @@ kit/
     evalfile.py    eval format v1 (failing / good / neighbours)
     scoring.py     scorers: distinct, contains, loop, finish, sequence
     watch.py       opt-in watch mode (wsp watch)
-    cli.py         `wsp demo`, `wsp run`, `wsp watch`, `wsp apply-edit`, `wsp version`
+    cli.py         `wsp demo`, `wsp run`, `wsp watch`, `wsp apply-edit`, `wsp status`, `wsp serve`, `wsp version`
     mcp_server.py  MCP tools
+    status.py      `wsp status` — green-only status (gate-passing runs only)
+    serve.py       `wsp serve` — local status page (default port 8899)
   evals/
     loop-fix-qwen3-0.6b.json
     loop-fix-gpt2-124m.json
