@@ -1,6 +1,6 @@
-# Weight-Space Programming
+# wsp-kit by Aurem
 
-![wsp-kit — real runs](assets/wsp-kit-banner-v0.2.0.png)
+![wsp-kit — real runs](assets/wsp-kit-banner.png)
 
 > **wsp-kit by Aurem** — an engineering tool for small models. Try to fix small AI models by editing their weights directly — no retraining, no fine-tuning, no gradients — with an eval gate deciding whether any edit ships.
 
@@ -170,7 +170,7 @@ That's the whole deal. No retraining bill, no blind trust.
 - The MIT work is a **blog post, not a peer-reviewed paper**, and has not yet been independently replicated.
 - Demonstrated so far mainly with **one editor model (GPT-6 Astra)**. Whether other models do this equally well is **unproven** — our reports name the editor behind every run (ours is a numerical estimator, no LLM).
 - This is a **batch job, not real-time**: load weights, run evaluations, reason, edit, re-evaluate. It never runs live inside a chat reply.
-- **No real-model edit has passed the gate yet.** The pipeline test passed; Qwen run 1, Qwen run 2, and the GPT-2 run all ended with the gate refusing and nothing shipping. That is published above, not hidden.
+- **No real-model edit has passed the gate yet.** The pipeline test passed; Qwen run 1, Qwen run 2, the Qwen clean re-run, and the GPT-2 run all ended with the gate refusing and nothing shipping. That is published above, not hidden.
 
 ---
 
@@ -180,7 +180,7 @@ That's the whole deal. No retraining bill, no blind trust.
 wsp-kit by Aurem is a free, open-source engineering tool for small models. It tries to fix one specific, repeatable failure in a small open-weight model by editing its weights directly — no retraining, no fine-tuning, no gradients.
 
 **Does wsp-kit fix real models?**
-Not yet. The pipeline test passed (failing 64.14 → 75.43, +11.29), but all three real-model runs (Qwen3-0.6B twice, GPT2-124M) failed the eval gate, so 0 weights shipped. The numbers are published in [REAL-RUNS.md](REAL-RUNS.md).
+Not yet. The pipeline test passed (failing 64.14 → 75.43, +11.29), but all four real-model runs (Qwen3-0.6B three times — run 1, run 2, and a clean re-run — plus GPT2-124M) failed the eval gate, so 0 weights shipped. The numbers are published in [REAL-RUNS.md](REAL-RUNS.md).
 
 **How do I try wsp-kit?**
 One command installs the skill: `curl -fsSL https://raw.githubusercontent.com/AuremHQ/weight-space-programming/main/install.sh | bash`. Then run `wsp demo` for the pipeline test or `wsp run` on your own small model.
