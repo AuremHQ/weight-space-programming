@@ -49,10 +49,12 @@ class TestGate(unittest.TestCase):
 
 class TestReport(unittest.TestCase):
     def test_report_carries_versions_and_note(self):
+        from wsp import __version__
+
         rep = report.make_report("toy", 0, 128, 0.77, {}, {}, {"passed": True},
                                  [0.7, 0.0], "toy estimator", ["numpy"], 1, [])
         self.assertEqual(rep["report_version"], 1)
-        self.assertEqual(rep["kit_version"], "0.1.1")
+        self.assertEqual(rep["kit_version"], __version__)
         self.assertIn("verify independently", rep["note"])
 
 
