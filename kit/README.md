@@ -185,18 +185,22 @@ still unproven, and no number here claims otherwise. Task pack:
 
 **Qwen run 2 — same model, diagnosis contrast fixed (neighbours set
 instead of the good set).** Causal proof flipped to **+32.22 (22.78 →
-55.00) — PASSED**. Three edit attempts ran; the best moved greedy
-failing by +3.89 but regressed neighbours by 5.0, so the **gate
-failed again, 0 weights**. (Note: run 2's attempt numbers were later
-found contaminated by a restore bug — a clean re-run is in progress
-for trustworthy attempt numbers. The gate verdict still stands.)
+55.00) — PASSED**. Three edit attempts ran; **gate failed again, 0
+weights**. (Note: run 2's attempt numbers were contaminated by a
+restore bug — the ablation was never restored between attempts — so
+they are not quoted here. A **clean re-run** with the fix (~43 min)
+reproduced the sweep, baselines, diagnosis and causal proof exactly,
+but all three clean attempts made the failing set *worse* at greedy:
+−11.11 / −11.11 / −12.22, neighbours regressed 22.5 / 30.0 / 17.5,
+best miss 32.72. The run-2 "near-miss" was entirely a bug artefact;
+the edit does not reproduce the ablation benefit.)
 
 **GPT-2 run — GPT2-124M, plain completion, no chat template (~35.5
 min, CPU).** 60-item lists loop (animals 1.7, countries 5.0, fruits
 1.7). Baselines @ 0.7: failing **28.33**, good 80, neighbours 100 —
 a **51.67-point** gap. Diagnosis: layers **[10, 11]**, norms 21.429 /
 20.613. Causal proof **−1.11 — FAILED**. **0 attempts, 0 weights,
-gate false, nothing shipped.** Full numbers for all three runs: the
+gate false, nothing shipped.** Full numbers for all runs: the
 repo's [REAL-RUNS.md](../REAL-RUNS.md).
 
 ## What the pipeline test proves, and what it does not
