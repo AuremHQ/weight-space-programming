@@ -9,13 +9,13 @@ import unittest
 
 import numpy as np
 
-from wsp import diagnose, edit, gate, pipeline, report, toy, weights
+from wsp import diagnose, edit, gate, pipeline, report, kit_test, weights
 
 
 class TestEdit(unittest.TestCase):
     def test_edit_changes_only_one_row(self):
-        w = toy.build_clean_weights()
-        direction = np.zeros(toy.HIDDEN_DIM)
+        w = kit_test.build_clean_weights()
+        direction = np.zeros(kit_test.HIDDEN_DIM)
         direction[0] = 1.0
         new, changed, frac = edit.apply_edit(w, 0, direction, 1.0)
         self.assertEqual(changed, 1)
@@ -51,8 +51,8 @@ class TestReport(unittest.TestCase):
     def test_report_carries_versions_and_note(self):
         from wsp import __version__
 
-        rep = report.make_report("toy", 0, 128, 0.77, {}, {}, {"passed": True},
-                                 [0.7, 0.0], "toy estimator", ["numpy"], 1, [])
+        rep = report.make_report("kit", 0, 128, 0.77, {}, {}, {"passed": True},
+                                 [0.7, 0.0], "kit estimator", ["numpy"], 1, [])
         self.assertEqual(rep["report_version"], 1)
         self.assertEqual(rep["kit_version"], __version__)
         self.assertIn("verify independently", rep["note"])
@@ -60,7 +60,7 @@ class TestReport(unittest.TestCase):
 
 class TestWeights(unittest.TestCase):
     def test_npz_roundtrip(self):
-        w = toy.build_clean_weights()
+        w = kit_test.build_clean_weights()
         with tempfile.TemporaryDirectory() as d:
             path = os.path.join(d, "w.npz")
             weights.save_weights(path, w)
