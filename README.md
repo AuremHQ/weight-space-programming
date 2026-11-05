@@ -1,6 +1,6 @@
 # Weight-Space Programming
 
-![wsp-kit v0.2.0 — real runs](assets/wsp-kit-banner-v0.2.0.png)
+![wsp-kit — real runs](assets/wsp-kit-banner-v0.2.0.png)
 
 > Try to fix small AI models by editing their weights directly — no retraining, no fine-tuning, no gradients — with an eval gate deciding whether any edit ships.
 
@@ -63,6 +63,8 @@ Full details, all 8 experiments, and the honest limits: see [RESEARCH.md](RESEAR
 
 > **Big AI should not belong only to people who can pay for big models and big retraining bills.**
 > Small, local, cheap models are already in everyone's hands — they just need to perform at their best. This kit exists to make a small local model give **better results**, one tiny proven edit at a time, without retraining and without sending your data anywhere. If the numbers don't improve, nothing ships. That honesty is the product.
+>
+> **This kit is free for everyone, and it stays free.** A small model should not mean bad results — everyone has the right to the best experience and the best results. The team's vision is simple: everyone should benefit from this kit.
 
 **— Tejinder Sandhu**, founder, Ora by Aurem ([auremcto.com](https://auremcto.com)) · [Tejinder Sandhu on LinkedIn](https://www.linkedin.com/in/tejinder-sandhu-156a3a181)
 
@@ -174,7 +176,7 @@ That's the whole deal. No retraining bill, no blind trust.
 
 - [x] Research summary + skill spec
 - [x] **Real runs live: Qwen3-0.6B + GPT2-124M, honest numbers, gate enforced** — see [REAL-RUNS.md](REAL-RUNS.md)
-- [ ] First passing weight edit on a real model (clean Qwen re-run numbers landing next)
+- [ ] First passing weight edit on a real model
 - [ ] Demo video/GIF + example report
 - [ ] First community test: your model, your failure, your numbers
 
