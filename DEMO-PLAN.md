@@ -1,46 +1,46 @@
-# Demo Plan — How This Repo Earns Its Stars
+# Demo Plan — How This Repo Earns Its Stars (Updated: Real Runs Live)
 
-Stars do not come from a good README. They come from a demo with real numbers that someone else can reproduce. This file is the build plan for that demo, and the bar it must clear before the repo is promoted anywhere.
+Stars do not come from a good README. They come from real runs with real numbers that someone else can reproduce. The real runs are now live — see [REAL-RUNS.md](REAL-RUNS.md). This file is the updated plan: what the runs did, what they proved, and the bar the next run must clear.
 
-## The demo (one thing, done well)
+## The real runs (done)
 
-**Reproduce the loop-fix on a small open model.**
+**Qwen3-0.6B (run 1 + run 2) and GPT2-124M, local CPU, numerical editor, no LLM.**
 
-1. Pick a small open-weight model (under 3B parameters) with a visible, repeatable failure — ideally a reasoning loop like Qwen's, or another single narrow failure.
-2. Record the failure on a fixed prompt set with fixed sampling settings: how often it loops, how often it finishes, baseline scores.
-3. Run the Weight-Space Programming skill (SKILL.md): diagnose the direction, subtract it from the identified layers, record layers touched and percentage of weights changed.
-4. Re-run the identical prompt set with identical settings. Publish the before/after table.
-5. Publish the edit script so anyone can reproduce the edit from the original weights, plus the edited weights as a separate artifact.
+1. Picked small open-weight models (under 3B parameters) with a visible, repeatable failure — list-looping on 60-item lists.
+2. Recorded the failure on fixed prompt sets with fixed sampling settings, with baselines.
+3. Ran the Weight-Space Programming skill (SKILL.md): diagnosed the direction, tested causality, and — where the proof passed — attempted the edit.
+4. Re-ran the identical prompt sets with identical settings. Published the before/after tables in [REAL-RUNS.md](REAL-RUNS.md).
+5. No edit passed the gate, so **no edited weights ship**. The reports are the artifact.
 
-## Acceptance criteria (all must hold before promotion)
+## Acceptance criteria — status
 
-- [ ] Before/after numbers on the SAME prompts with the SAME settings — no cherry-picked prompts.
-- [ ] Edit touches under 1% of weights, with layers and counts reported.
-- [ ] At least one guard metric reported (something that must not get worse), not just the headline metric.
-- [ ] Editor model named in the report (results are editor-dependent).
-- [ ] Edit script reproduces the edit from the original weights on a fresh run.
-- [ ] A short screen recording or GIF of the before/after behaviour (loops stopping is visible — show it).
-- [ ] The honest-limits section of the README stays in place. No claim the demo does not support.
+- [x] Before/after numbers on the SAME prompts with the SAME settings — no cherry-picked prompts.
+- [x] Edit touches under 1% of weights, with layers and counts reported. (No edit shipped — 0 weights changed, 0.77% on the pipeline test.)
+- [x] At least one guard metric reported (good + neighbours sets, not just the headline metric).
+- [x] Editor named in every report (numerical estimator, no LLM; results are editor-dependent).
+- [ ] Edit script reproduces the edit from the original weights on a fresh run. — **Not yet: no real-model edit has passed the gate.** The pipeline test's edit is reproducible; a real-model passing edit is the next milestone.
+- [x] A short video of the run report (GPT-2 report video, MIT-style before/after bars + gate verdict).
+- [x] The honest-limits section of the README stays in place. No claim the runs do not support.
 
 ## What NOT to do
 
-- Do not re-publish MIT's numbers as your own. Their Qwen result is theirs; the demo must produce its own numbers.
-- Do not claim the demo proves this works on large models, closed models, or all models. It proves one thing on one small model.
-- Do not promote the repo (posts, launch lists, social) before the demo criteria are met. A repo with a great README and no demo earns skepticism, not stars.
-- Do not include any private code, secrets, or customer data. This repo is standalone: research summary + skill + demo only.
+- Do not re-publish MIT's numbers as your own. Their Qwen result is theirs; our numbers are ours, in [REAL-RUNS.md](REAL-RUNS.md).
+- Do not claim the runs prove this works on large models, closed models, or all models. They prove the pipeline runs and the gate works on two small models.
+- Do not claim a real model was fixed. **None was.** The gate refused all three real runs.
+- Do not include any private code, secrets, or customer data. This repo is standalone: research summary + skill + real runs only.
 
-## Publishing checklist (when the demo is ready)
+## Publishing checklist
 
-- [ ] Repo name: `weight-space-programming`
-- [ ] License: MIT (see LICENSE)
-- [ ] Topics/tags for discovery: `weight-space`, `llm`, `interpretability`, `model-editing`, `open-weights`, `ai-safety`, `machine-learning`
-- [ ] README status badge flipped from "Demo in progress" to "Demo live"
-- [ ] Launch post: one short post showing the before/after (video/GIF first, numbers second), linking the repo and the demo report — not a thread about the skill in the abstract
-- [ ] Link back to https://auremcto.com (the team behind this skill builds Ora by Aurem; the skill is public, ORA itself stays private)
+- [x] Repo name: `weight-space-programming`
+- [x] License: MIT (see LICENSE)
+- [x] Topics/tags for discovery: `weight-space`, `llm`, `interpretability`, `model-editing`, `open-weights`, `ai-safety`, `machine-learning`
+- [x] README status badge flipped from "Demo in progress" to "Real runs live"
+- [x] Launch post: GPT-2 report graphic + video + honest caption (numbers first, gate verdict included), linking the repo — not a thread about the skill in the abstract
+- [x] Link back to https://auremcto.com (the team behind this skill builds Ora by Aurem; the skill is public, ORA itself stays private)
 
-## Order of work
+## Next
 
-1. Scaffold + README (done — this repo).
-2. Demo build (coding agent, per SKILL.md + this plan).
-3. Demo numbers + video.
-4. Publish + post. That is when the hype window pays.
+1. Clean Qwen re-run numbers (restore bug fixed) — lands in [REAL-RUNS.md](REAL-RUNS.md) next.
+2. First passing weight edit on a real model — the milestone that changes the README's headline.
+3. Frontier-LLM editor variant (MIT-style editor) — only if Teji approves it.
+4. First community test: your model, your failure, your numbers.

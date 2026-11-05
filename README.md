@@ -1,15 +1,17 @@
 # Weight-Space Programming
 
+![wsp-kit v0.2.0 — real runs](assets/wsp-kit-banner-v0.2.0.png)
+
 > Try to fix small AI models by editing their weights directly — no retraining, no fine-tuning, no gradients — with an eval gate deciding whether any edit ships.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Research: MIT CSAIL](https://img.shields.io/badge/Research-MIT%20CSAIL-blue.svg)](RESEARCH.md)
 [![GitHub Stars](https://img.shields.io/github/stars/AuremHQ/weight-space-programming?style=social)](https://github.com/AuremHQ/weight-space-programming)
-![Status: Skill spec complete · Runnable demo in progress](https://img.shields.io/badge/Status-Demo%20in%20progress-orange.svg)
+![Status: Real runs live](https://img.shields.io/badge/Status-Real%20runs%20live-green.svg)
 
 > From the team building **Ora by Aurem — https://auremcto.com** — an AI engineer for non-technical founders. ORA itself stays private; this skill is public so anyone can use it on their own models.
 
-> ⭐ **Star this repo** if you want the real-model demo — the toy demo's numbers are already in [kit/README.md](kit/README.md), and the small-open-model demo lands here next.
+> ⭐ **Star this repo** — the real runs are live below, with honest numbers.
 > 🔁 **Share it** with anyone running a small open model with one stubborn failure.
 
 ---
@@ -24,7 +26,23 @@
 
 ---
 
-## The result that started it — MIT's numbers, not ours (ours are coming)
+## Real runs — our numbers (not MIT's)
+
+We ran the kit on **real models** — Qwen3-0.6B and GPT2-124M, local CPU, no LLM editor. Here is what actually happened. Full numbers: [REAL-RUNS.md](REAL-RUNS.md).
+
+| Run | Model | Failure | Diagnosis | Causal proof | Weights changed | Gate |
+|---|---|---|---|---|---|---|
+| **Pipeline test** | Toy weights (smoke test) | Failing 64.14 vs good 75.98 | Row 0 | **+18.00 — PASSED** | **128 (0.77%)** | **PASSED — failing 64.14 → 75.43 (+11.29)** |
+| **Qwen run 1** | Qwen3-0.6B | 60-item lists loop (60 animals → only 16 distinct) | Layers [27, 26] | −3.33 — FAILED | **0** | **FAILED — nothing shipped** |
+| **Qwen run 2** | Qwen3-0.6B | Same failure | Layers [27, 26] | **+32.22 — PASSED** | **0** | **FAILED — nothing shipped** (best attempt +3.89, neighbours −5.0) |
+| **GPT-2 run** | GPT2-124M | 60-item lists loop (animals 1.7, countries 5.0, fruits 1.7) | Layers [10, 11] | −1.11 — FAILED | **0** | **FAILED — nothing shipped** |
+
+**What this proves:** the kit runs end-to-end on real models, finds real failures, diagnoses real layers — and **the gate works**: when the proof fails, nothing ships.
+**What it does not prove yet:** a passing weight edit on a real model. That is the next milestone, not a claim.
+
+---
+
+## Where it started — MIT's numbers
 
 ```
 MATH-500           7.9%  ████░░░░░░░░░░░░░░░░  →  48.1% ████████████████████
@@ -37,6 +55,15 @@ Weights changed: 131,072 — just 0.016% of the model
 How: the model (Qwen3.5-0.8B) kept getting stuck repeating itself until it ran out of tokens. The researchers traced the loop to one direction written by the MLPs of layers 15 and 19, and subtracted it. The model didn't learn new math — **it already knew the math; the loop was hiding it.**
 
 Full details, all 8 experiments, and the honest limits: see [RESEARCH.md](RESEARCH.md).
+
+---
+
+## Founder's vision
+
+> **Big AI should not belong only to people who can pay for big models and big retraining bills.**
+> Small, local, cheap models are already in everyone's hands — they just need to perform at their best. This kit exists to make a small local model give **better results**, one tiny proven edit at a time, without retraining and without sending your data anywhere. If the numbers don't improve, nothing ships. That honesty is the product.
+
+**— Tejinder Sandhu**, founder, Ora by Aurem ([auremcto.com](https://auremcto.com)) · [Tejinder Sandhu on LinkedIn](https://www.linkedin.com/in/tejinder-sandhu-156a3a181)
 
 ---
 
@@ -75,8 +102,9 @@ If you want training, use training. If you want to try removing one stubborn fai
 
 - **[RESEARCH.md](RESEARCH.md)** — the MIT research, explained simply: what weight-space programming is, all 8 experiments with numbers, and where it fails.
 - **[SKILL.md](SKILL.md)** — the Weight-Space Programming skill: the 3-step workflow, hard refusal rules, and safety gates.
-- **[DEMO-PLAN.md](DEMO-PLAN.md)** — how the runnable demo is being built, and the exact numbers it must show before anyone should trust it.
-- **[kit/](kit/)** — the runnable kit: engine, CLI, MCP server, task pack, and a toy demo with real numbers.
+- **[REAL-RUNS.md](REAL-RUNS.md)** — our real-model runs (Qwen + GPT-2) with full numbers, honest gate verdicts, and what they prove.
+- **[DEMO-PLAN.md](DEMO-PLAN.md)** — how the real runs were built, and the exact bar the next run must clear.
+- **[kit/](kit/)** — the runnable kit: engine, CLI, MCP server, task pack, and the universal real-model pipeline (`wsp run`).
 
 ---
 
@@ -85,11 +113,17 @@ If you want training, use training. If you want to try removing one stubborn fai
 The skill is runnable as `wsp-kit`. From a clone:
 
 ```
-pip install ./kit
+pip install './kit[real]'
 wsp demo
 ```
 
-That runs the toy pipeline end to end and writes `report.json` plus the edited weights. The numbers are from the toy model, not a language model — see [kit/README.md](kit/README.md) for what the demo proves and what it does not.
+`wsp demo` runs the quick pipeline check end to end and writes `report.json`. For a real model:
+
+```
+wsp run --model Qwen/Qwen3-0.6B --eval kit/evals/loop-fix-qwen3-0.6b.json --out-dir out
+```
+
+That runs the full gated pipeline — temperature sweep, baselines, diagnosis, causal proof, up to 3 edit attempts — and writes `report.json`. If the gate fails, the out-dir holds only the report: **nothing ships**.
 
 For agents and harnesses, the same pipeline is an MCP server (requires `pip install 'wsp-kit[mcp]'` first):
 
@@ -122,8 +156,6 @@ For agents and harnesses, the same pipeline is an MCP server (requires `pip inst
 2. Get a diagnosis and a tiny, reviewable edit.
 3. Let the eval gate decide — if the numbers don't improve, nothing ships.
 
-> Note: today the runnable kit runs the toy pipeline — see [kit/README.md](kit/README.md) for what it proves. A real model needs a runner plus a frontier-class editor; neither ships in v0.1.0 yet.
-
 That's the whole deal. No retraining bill, no blind trust.
 
 ---
@@ -131,16 +163,17 @@ That's the whole deal. No retraining bill, no blind trust.
 ## Honest limits — why you can trust this repo
 
 - The MIT work is a **blog post, not a peer-reviewed paper**, and has not yet been independently replicated.
-- Demonstrated so far mainly with **one editor model (GPT-6 Astra)**. Whether other models do this equally well is **unproven** — our demo will name the model behind every edit.
+- Demonstrated so far mainly with **one editor model (GPT-6 Astra)**. Whether other models do this equally well is **unproven** — our reports name the editor behind every run (ours is a numerical estimator, no LLM).
 - This is a **batch job, not real-time**: load weights, run evaluations, reason, edit, re-evaluate. It never runs live inside a chat reply.
-- **Our own real-model demo numbers are not here yet.** The toy demo's numbers are in [kit/README.md](kit/README.md) — the small-open-model demo is exactly what the next milestone delivers, so star the repo to see them land.
+- **No real-model edit has passed the gate yet.** The pipeline test passed; Qwen run 1, Qwen run 2, and the GPT-2 run all ended with the gate refusing and nothing shipping. That is published above, not hidden.
 
 ---
 
 ## Roadmap
 
 - [x] Research summary + skill spec
-- [ ] **Runnable demo: loop-fix on a small open model, with reproducible before/after numbers** ← next (toy demo done — see [kit/](kit/))
+- [x] **Real runs live: Qwen3-0.6B + GPT2-124M, honest numbers, gate enforced** — see [REAL-RUNS.md](REAL-RUNS.md)
+- [ ] First passing weight edit on a real model (clean Qwen re-run numbers landing next)
 - [ ] Demo video/GIF + example report
 - [ ] First community test: your model, your failure, your numbers
 
@@ -148,7 +181,7 @@ That's the whole deal. No retraining bill, no blind trust.
 
 ## ⭐ Star & share
 
-- **Star** = you follow the demo. GitHub notifies you when the real numbers land here.
+- **Star** = you follow the next run. GitHub notifies you when new numbers land here.
 - **Share** = someone with a looping small model finds a fix instead of paying for a full retraining run.
 - **Built by the team behind https://auremcto.com** — Ora by Aurem, an AI engineer for non-technical founders.
 
@@ -157,7 +190,7 @@ That's the whole deal. No retraining bill, no blind trust.
 ## Credits
 
 - Research: *"Sparks of Weight-Space Programming: LLMs can natively read & write neural network weights"* — Rikiya Takehi, Jayden Teoh, Alex Zhang, Omar Khattab, MIT CSAIL, 2 Nov 2026. Original blog: https://rikiyat.github.io/blog/weight-space-programming/ · Full experiment logs: https://github.com/RikiyaT/lm_understand-logs
-- This repo's skill design and packaging: the team building [Ora by Aurem](https://auremcto.com). ORA itself stays private; this skill is public so anyone can use it on their own models.
+- This repo's skill design and packaging: the team building [Ora by Aurem](https://auremcto.com), founded by **Tejinder Sandhu**. ORA itself stays private; this skill is public so anyone can use it on their own models.
 
 ## License
 
