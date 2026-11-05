@@ -46,7 +46,7 @@ wsp demo
 ```
 
 This runs the kit pipeline (smoke test) end to end and writes `report.json` and
-`toy_edited.npz` into `wsp-demo-out/`. Real output:
+`kit_edited.npz` into `wsp-demo-out/`. Real output:
 
 ```
 baseline (serving temperature 0.7, defective model)
@@ -72,7 +72,7 @@ attempt 1: alpha 1.5 — 128 weights (0.77%) — passed: True
 
 gate passed: failing +11.29 points, good +0.84 points, neighbours +1.49 points
 wrote wsp-demo-out/report.json
-wrote wsp-demo-out/toy_edited.npz
+wrote wsp-demo-out/kit_edited.npz
 ```
 
 Read that output the way it is meant: temperature alone did not fix
@@ -82,6 +82,17 @@ failure, and one edit of 128 weights (0.77%) moved the failing set
 from 64.14 to 75.43 at the serving temperature, with no guard or
 neighbour regression. The gate passed at the serving temperature and
 at greedy, which is why the edit shipped.
+
+## Status — see approved improvements
+
+```bash
+wsp status
+wsp serve
+```
+
+`wsp status` prints one line: how many gate-passing improvements are approved, the biggest gain, and how many are real-model passes. `wsp serve` starts a small local page (http://127.0.0.1:8899) that shows the same, refreshed from the run reports.
+
+Both show only gate-passing runs. A refused run never appears there — the full honest log stays in `REAL-RUNS.md`. Every edit earns its place: only gate-passing edits ship.
 
 ## Real models
 
@@ -264,13 +275,13 @@ Tools (all stable):
 | Tool | What it does |
 |---|---|
 | `wsp_version` | Kit and report-format versions |
-| `toy_baseline` | Build the toy model, plant the defect, measure the baseline |
-| `toy_temperature_sweep` | Step 0: try temperatures before touching weights |
-| `toy_prove_cause` | Ablation test on the suspect row |
-| `toy_estimate_direction` | Estimate the failure direction from hidden activations |
-| `toy_apply_edit` | Subtract alpha times the direction (1% cap enforced) |
-| `toy_run_gate` | Gate the candidate at serving temperature and greedy |
-| `toy_demo` | The whole pipeline, returns the report |
+| `kit_baseline` | Build the kit test model, plant the defect, measure the baseline |
+| `kit_temperature_sweep` | Step 0: try temperatures before touching weights |
+| `kit_prove_cause` | Ablation test on the suspect row |
+| `kit_estimate_direction` | Estimate the failure direction from hidden activations |
+| `kit_apply_edit` | Subtract alpha times the direction (1% cap enforced) |
+| `kit_run_gate` | Gate the candidate at serving temperature and greedy |
+| `kit_demo` | The whole pipeline, returns the report |
 
 ## Layout
 
@@ -280,7 +291,7 @@ kit/
   README.md
   wsp/
     weights.py     load/save .npz and .safetensors, size cap
-    toy.py         the toy model and the planted defect
+    kit_test.py         the kit test model and the planted defect
     diagnose.py    baseline, temperature sweep, causal proof, direction
     edit.py        direction subtraction, 1% cap
     gate.py        eval gate
@@ -299,7 +310,7 @@ kit/
     loop-fix-qwen3-0.6b.json
     loop-fix-gpt2-124m.json
   tasks/
-    loop-fix-toy/task.json
+    loop-fix-kit/task.json
     loop-fix-real/task.json
   tests/
     test_kit.py    unittest, no extra dependencies
