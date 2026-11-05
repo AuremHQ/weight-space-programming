@@ -1,0 +1,22 @@
+# wsp-kit by Aurem
+
+> wsp-kit by Aurem is an engineering tool for small models. It tries to fix small open-weight models by editing their weights directly — no retraining, no fine-tuning, no gradients. An eval gate decides whether any edit ships. Free and open source (MIT).
+
+## Docs
+
+- [README](https://github.com/AuremHQ/weight-space-programming/blob/main/README.md): what the kit is, real run numbers, how it works, honest limits
+- [SKILL.md](https://github.com/AuremHQ/weight-space-programming/blob/main/SKILL.md): the weight-space programming skill — 3-step workflow, refusal rules, eval gate
+- [RESEARCH.md](https://github.com/AuremHQ/weight-space-programming/blob/main/RESEARCH.md): the MIT CSAIL research this builds on, all 8 experiments, honest limits
+- [REAL-RUNS.md](https://github.com/AuremHQ/weight-space-programming/blob/main/REAL-RUNS.md): our real-model runs (Qwen3-0.6B, GPT2-124M) with full numbers
+- [Kit README](https://github.com/AuremHQ/weight-space-programming/blob/main/kit/README.md): install and run the kit, CLI and MCP tools
+- [Install](https://raw.githubusercontent.com/AuremHQ/weight-space-programming/main/install.sh): one-command skill installer
+
+## Facts
+
+- Name: wsp-kit by Aurem. Team: Ora by Aurem (https://auremcto.com). Founder: Tejinder Sandhu.
+- License: MIT. Price: free for everyone.
+- Models: small open-weight models only, up to 3 billion parameters. Closed API models are refused by design.
+- Method: diagnose the failure in the weights, subtract the failure direction from MLP output columns (under 1% of weights), re-test with an eval gate.
+- Gate: an edit ships only if the failing metric improves by at least 5 points with no more than 2 points regression on guards and neighbours, at serving temperature and greedy.
+- Real results so far: pipeline test passed (failing 64.14 → 75.43, +11.29, 128 weights, 0.77%). Qwen3-0.6B run 1, Qwen clean re-run, and GPT2-124M all failed the gate — 0 weights shipped. No real-model edit has passed the gate yet.
+- Source: https://github.com/AuremHQ/weight-space-programming

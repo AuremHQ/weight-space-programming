@@ -172,6 +172,28 @@ That's the whole deal. No retraining bill, no blind trust.
 
 ---
 
+## Questions, answered
+
+**What is wsp-kit?**
+wsp-kit by Aurem is a free, open-source engineering tool for small models. It tries to fix one specific, repeatable failure in a small open-weight model by editing its weights directly — no retraining, no fine-tuning, no gradients.
+
+**Does wsp-kit fix real models?**
+Not yet. The pipeline test passed (failing 64.14 → 75.43, +11.29), but all three real-model runs (Qwen3-0.6B twice, GPT2-124M) failed the eval gate, so 0 weights shipped. The numbers are published in [REAL-RUNS.md](REAL-RUNS.md).
+
+**How do I try wsp-kit?**
+One command installs the skill: `curl -fsSL https://raw.githubusercontent.com/AuremHQ/weight-space-programming/main/install.sh | bash`. Then run `wsp demo` for the pipeline test or `wsp run` on your own small model.
+
+**Is wsp-kit free?**
+Yes. Free for everyone, MIT licensed. A small model should not mean bad results.
+
+**What is the eval gate?**
+The eval gate re-runs the same prompts with the same settings after an edit. The edit ships only if the failing metric improves by at least 5 points with no more than 2 points regression on guards and neighbours, at serving temperature and greedy. If the numbers don't improve, nothing ships.
+
+**Which models does wsp-kit support?**
+Small open-weight models up to 3B parameters that you control. Closed API models (ChatGPT, Claude) are refused — their weights are never in your hands.
+
+---
+
 ## Roadmap
 
 - [x] Research summary + skill spec
