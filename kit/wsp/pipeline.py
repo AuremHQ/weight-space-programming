@@ -46,6 +46,8 @@ def run_pipeline():
         attempts.append({
             "alpha": alpha,
             "weights_changed": changed,
+            # True percent (0.77), not the fraction (0.0077): the
+            # 0.1.1 percent-label fix, preserved in v0.2.0.
             "weights_changed_pct": frac * 100,
             "gate_by_temperature": per_temp,
             "passed": passed,

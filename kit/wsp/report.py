@@ -12,6 +12,21 @@ reproducible and must not be trusted as if it were.
 from . import REPORT_VERSION, __version__
 
 
+def _report_note(gate):
+    """Honest note: the canned 'passed' wording must never appear on
+    a failed gate. Pass path keeps the original wording; fail path
+    states nothing shipped and why (the gate reason)."""
+    base = ("Weight-space editing was demonstrated with GPT-6 Astra "
+            "and is unproven for other models. ")
+    if gate.get("passed"):
+        return (base + "This edit passed the eval gate above; verify "
+                "independently before use.")
+    reason = gate.get("reason", "the eval gate did not pass")
+    return (base + "This edit did NOT pass the eval gate "
+            f"({reason}) \u2014 nothing shipped; verify independently "
+            "before use.")
+
+
 def make_report(model, edited_row, weights_changed, weights_changed_pct,
                 before, after, gate, temperatures_checked, editor, tools,
                 attempts_used, attempts):
@@ -30,9 +45,5 @@ def make_report(model, edited_row, weights_changed, weights_changed_pct,
         "tools": tools,
         "attempts_used": attempts_used,
         "attempts": attempts,
-        "note": (
-            "Weight-space editing was demonstrated with GPT-6 Astra and is "
-            "unproven for other models. This edit passed the eval gate "
-            "above; verify independently before use."
-        ),
+        "note": _report_note(gate),
     }

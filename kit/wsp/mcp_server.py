@@ -94,6 +94,7 @@ def toy_apply_edit(alpha: float):
         s["broken"], toy.DEFECT_CLASS, STATE["direction"], alpha
     )
     STATE["candidate"] = candidate
+    # True percent (0.77), not the fraction — the 0.1.1 percent-label fix.
     return {"weights_changed": changed, "weights_changed_pct": frac * 100}
 
 
