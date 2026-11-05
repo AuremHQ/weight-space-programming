@@ -49,10 +49,10 @@ class TestGate(unittest.TestCase):
 
 class TestReport(unittest.TestCase):
     def test_report_carries_versions_and_note(self):
-        rep = report.make_report("toy", 0, 128, 0.0077, {}, {}, {"passed": True},
+        rep = report.make_report("toy", 0, 128, 0.77, {}, {}, {"passed": True},
                                  [0.7, 0.0], "toy estimator", ["numpy"], 1, [])
         self.assertEqual(rep["report_version"], 1)
-        self.assertEqual(rep["kit_version"], "0.1.0")
+        self.assertEqual(rep["kit_version"], "0.1.1")
         self.assertIn("verify independently", rep["note"])
 
 
@@ -80,7 +80,7 @@ class TestPipeline(unittest.TestCase):
         self.assertGreaterEqual(after["failing"] - before["failing"], 5.0)
         self.assertLessEqual(before["good"] - after["good"], 2.0)
         self.assertLessEqual(before["neighbours"] - after["neighbours"], 2.0)
-        self.assertLessEqual(rep["weights_changed_pct"], 0.01)
+        self.assertLessEqual(rep["weights_changed_pct"], 1.0)
         self.assertLessEqual(len(attempts), 3)
 
 
