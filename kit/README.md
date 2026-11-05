@@ -83,7 +83,7 @@ from 64.14 to 75.43 at the serving temperature, with no guard or
 neighbour regression. The gate passed at the serving temperature and
 at greedy, which is why the edit shipped.
 
-## Real models (v0.2.0)
+## Real models
 
 The toy proves the pipeline. The real runner runs the same pipeline
 on a real open-weight model, with your eval file, from one command:
@@ -212,7 +212,7 @@ They prove the pipeline works end to end: baseline, cheap-fix check,
 causal proof, edit, gate, report. They do not prove anything about a
 language model.
 
-For a real model, v0.2.0 ships the runner (see "Real models" above)
+For a real model, the kit ships the runner (see "Real models" above)
 but not a frontier-class editor: the direction here is numerical,
 estimated from measured activations, with no LLM involved. MIT's
 result used GPT-6 Astra; whether other editors do this equally well
@@ -259,7 +259,7 @@ The same pipeline, callable from any MCP-compatible harness or agent:
 }
 ```
 
-Tools (all stable in v0.2.0):
+Tools (all stable):
 
 | Tool | What it does |
 |---|---|
