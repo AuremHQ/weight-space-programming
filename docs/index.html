@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>wsp-kit by Aurem — an engineering tool for small models</title>
+<meta name="description" content="wsp-kit by Aurem tries to fix small open-weight models by editing their weights directly — no retraining, no fine-tuning, no gradients. An eval gate decides whether any edit ships. Free and open source (MIT). Full vision, real performance numbers, and Aurem's other software.">
+<meta name="keywords" content="wsp-kit, weight-space programming, small language models, model editing, eval gate, open source, Aurem, ORA, ora-grounding">
+<meta property="og:type" content="website">
+<meta property="og:title" content="wsp-kit by Aurem — an engineering tool for small models">
+<meta property="og:description" content="Try to fix small open-weight models by editing their weights directly. No retraining. An eval gate decides. Free for everyone.">
+<meta property="og:url" content="https://auremhq.github.io/weight-space-programming/">
+<meta property="og:image" content="https://raw.githubusercontent.com/AuremHQ/weight-space-programming/main/assets/wsp-kit-og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="wsp-kit by Aurem — an engineering tool for small models">
+<meta name="twitter:description" content="Try to fix small open-weight models by editing their weights directly. No retraining. An eval gate decides. Free for everyone.">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/AuremHQ/weight-space-programming/main/assets/wsp-kit-og.png">
+<link rel="canonical" href="https://auremhq.github.io/weight-space-programming/">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "name": "wsp-kit by Aurem",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Cross-platform",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "license": "https://opensource.org/licenses/MIT",
+      "codeRepository": "https://github.com/AuremHQ/weight-space-programming",
+      "url": "https://auremhq.github.io/weight-space-programming/",
+      "description": "An engineering tool for small models. It tries to fix small open-weight models by editing their weights directly — no retraining, no fine-tuning, no gradients. An eval gate decides whether any edit ships.",
+      "author": { "@type": "Organization", "name": "Aurem", "url": "https://auremcto.com" }
+    },
+    {
+      "@type": "Organization",
+      "name": "Aurem",
+      "url": "https://auremcto.com",
+      "sameAs": [
+        "https://github.com/AuremHQ",
+        "https://github.com/AuremHQ/weight-space-programming",
+        "https://github.com/AuremHQ/ora-grounding",
+        "https://www.linkedin.com/in/tejinder-sandhu-156a3a181"
+      ]
+    }
+  ]
+}
+</script>
+<style>
+  :root{
+    --bg1:#0a0618; --bg2:#180834; --gold:#f5c542; --gold-pale:#ffd678;
+    --white:#ffffff; --light:#e2e8f0; --muted:#94a3b8; --green:#22c55e;
+    --green-dark:#15803d; --purple:#6d28d9; --card:#1e1440; --line:#2e2560;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--light);line-height:1.6}
+  a{color:var(--gold-pale)}
+  .wrap{max-width:920px;margin:0 auto;padding:0 20px}
+  header{padding:18px 0 8px;border-bottom:1px solid var(--line)}
+  header .wrap{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:baseline}
+  .brand{font-weight:800;font-size:20px;color:var(--white);text-decoration:none}
+  .brand b{color:var(--gold)}
+  nav a{color:var(--light);text-decoration:none;font-size:15px;margin-right:18px}
+  nav a:hover{color:var(--gold)}
+  .hero{padding:56px 0 40px;text-align:center}
+  .hero h1{font-size:52px;line-height:1.08;margin:0 0 8px;color:var(--white)}
+  .hero h1 b{color:var(--gold)}
+  .tagline{font-size:22px;color:var(--white);margin:6px 0 18px}
+  .hook{font-size:19px;color:var(--light);max-width:640px;margin:0 auto 26px}
+  .hook b{color:var(--gold)}
+  .proof{display:inline-flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:0 0 28px}
+  .chip{background:#fff;color:#111827;border-radius:999px;padding:8px 18px;font-weight:700;font-size:15px}
+  .chip .g{color:var(--green-dark)}
+  .chip.gold{background:var(--gold);color:#111827}
+  .btns{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:26px}
+  .btn{display:inline-block;padding:12px 22px;border-radius:10px;font-weight:700;text-decoration:none;font-size:16px}
+  .btn-gold{background:var(--gold);color:#111827}
+  .btn-ghost{border:2px solid var(--gold);color:var(--gold)}
+  pre{background:#0d0a24;border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+    overflow-x:auto;text-align:left;font-size:14px;color:#f8fafc;max-width:640px;margin:0 auto}
+  section{padding:44px 0;border-top:1px solid var(--line)}
+  h2{color:var(--gold);font-size:30px;margin:0 0 14px}
+  h3{color:var(--white);font-size:20px;margin:26px 0 8px}
+  p{margin:0 0 14px}
+  .vision{font-size:19px;color:var(--white);border-left:4px solid var(--gold);padding:6px 0 6px 18px;margin:18px 0}
+  .vision small{display:block;color:var(--muted);font-size:15px;margin-top:8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin:16px 0}
+  .card h3{margin-top:0}
+  .card p:last-child{margin-bottom:0}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:18px 0}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .step .n{font-size:28px;font-weight:800;color:var(--gold)}
+  .step h3{margin:6px 0 6px}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:15px}
+  th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+  th{background:#241a4d;color:var(--white)}
+  td .g{color:var(--green);font-weight:700}
+  td .r{color:#f87171;font-weight:700}
+  .scroll{overflow-x:auto}
+  .plain{background:#12233a;border:1px solid #1e3a5f;border-radius:12px;padding:16px 18px;margin:16px 0}
+  .plain p:last-child{margin-bottom:0}
+  .faq details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin:10px 0}
+  .faq summary{cursor:pointer;font-weight:700;color:var(--white);font-size:17px}
+  .faq details p{margin:10px 0 4px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+  footer{border-top:1px solid var(--line);padding:30px 0 44px;color:var(--muted);font-size:14px}
+  footer a{color:var(--gold-pale)}
+  @media (max-width:640px){
+    .hero h1{font-size:36px}
+    .tagline{font-size:19px}
+    .steps{grid-template-columns:1fr}
+    .grid2{grid-template-columns:1fr}
+    h2{font-size:25px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="brand" href="#">wsp-kit <b>by Aurem</b></a>
+    <nav>
+      <a href="#vision">Vision</a>
+      <a href="#how">How it works</a>
+      <a href="#performance">Performance</a>
+      <a href="#gate">The gate</a>
+      <a href="#try">Try it</a>
+      <a href="#aurem">Aurem's other software</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>wsp-kit <b>by Aurem</b></h1>
+    <p class="tagline">An engineering tool for small models.</p>
+    <p class="hook">We tried to fix a real model without retraining — and <b>the eval gate said NO.</b><br>
+    That honesty is the product. Small model. Best results. Free for everyone.</p>
+    <div class="proof">
+      <span class="chip"><span class="g">✓ KIT TEST — PASSED</span> &nbsp;+11.29 &nbsp;(64.14 → 75.43)</span>
+      <span class="chip gold">FREE • OPEN SOURCE • MIT</span>
+    </div>
+    <div class="btns">
+      <a class="btn btn-gold" href="https://github.com/AuremHQ/weight-space-programming">View on GitHub</a>
+      <a class="btn btn-ghost" href="https://github.com/AuremHQ/weight-space-programming">⭐ Star the repo</a>
+      <a class="btn btn-ghost" href="https://auremcto.com">ORA by Aurem →</a>
+    </div>
+    <pre>curl -fsSL https://raw.githubusercontent.com/AuremHQ/weight-space-programming/main/install.sh | bash</pre>
+  </div>
+
+  <section id="vision">
+    <h2>Our vision</h2>
+    <p>Big AI should not belong only to the people who can pay for big models. A small model running on your own machine should still perform at its best — and everyone should have the right to the best experience and the best results.</p>
+    <div class="vision">
+      "This kit is free for everyone, and it stays free. A small model should not mean bad results — everyone has the right to the best experience and the best results. The team's vision is simple: everyone should benefit from this kit."
+      <small>— Tejinder Sandhu, founder of Aurem (<a href="https://www.linkedin.com/in/tejinder-sandhu-156a3a181">LinkedIn</a>)</small>
+    </div>
+    <p>wsp-kit is our first step toward that vision: a free, open-source tool that tries to fix a small model's specific failure by editing its weights directly — no retraining, no fine-tuning, no gradients, no cloud bill. If the numbers do not improve, nothing ships. The kit is honest about what it can and cannot do, and the proof is published below.</p>
+  </section>
+
+  <section id="how">
+    <h2>How it works</h2>
+    <p>wsp-kit follows the weight-space programming idea from MIT CSAIL's research blog <a href="https://www.csail.mit.edu/news/sparks-of-weight-space-programming">"Sparks of Weight-Space Programming"</a> (published 2026-11-02; a blog post, not a peer-reviewed paper, and not yet independently replicated). The idea: a model's failure can live in a small set of weights. Find those weights, change them a little, and the failure can go away — without retraining the model.</p>
+    <div class="steps">
+      <div class="step"><div class="n">0</div><h3>Cheap fix first</h3><p>Before touching any weight, the kit tries the free knobs — temperature first. If a setting fixes it, no edit is needed.</p></div>
+      <div class="step"><div class="n">1</div><h3>Detect</h3><p>Measure the failure, then prove the cause: disable the suspected weights and check whether the failure disappears. The bar is +5 points — no proof, no edit.</p></div>
+      <div class="step"><div class="n">2</div><h3>Fix</h3><p>Subtract the failure direction from the MLP output columns — under 1% of the model's weights, at most 3 attempts. The original weights are never overwritten.</p></div>
+    </div>
+    <p>Then the <strong>eval gate</strong> re-runs the same prompts with the same settings. Only a gate-passing edit ships. The full rules live in <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/SKILL.md">SKILL.md</a>.</p>
+  </section>
+
+  <section id="performance">
+    <h2>Performance — our real numbers</h2>
+    <p>We publish every run, including the failures. These are our numbers, measured on our own runs — not MIT's.</p>
+
+    <h3>The pipeline test — passed</h3>
+    <div class="scroll"><table>
+      <tr><th>What</th><th>Before</th><th>After</th><th>Change</th></tr>
+      <tr><td>Failing prompts (the broken behaviour)</td><td>64.14</td><td>75.43</td><td><span class="g">+11.29</span></td></tr>
+      <tr><td>Good prompts (must not break)</td><td>75.98</td><td>—</td><td>no regression</td></tr>
+      <tr><td>Neighbour prompts (must not break)</td><td>74.80</td><td>—</td><td>no regression</td></tr>
+      <tr><td>Weights changed</td><td colspan="3">128 weights — 0.77% of the model</td></tr>
+      <tr><td>Gate</td><td colspan="3"><span class="g">PASSED</span> at temperature 0.7 and greedy (0.0)</td></tr>
+    </table></div>
+    <p>The pipeline test is a small 2-layer test model with a known, planted failure. It proves the kit works end to end: detect, edit, gate, ship.</p>
+
+    <h3>Real models — the gate refused every run</h3>
+    <div class="scroll"><table>
+      <tr><th>Run</th><th>Failing score</th><th>Causal proof</th><th>Gate</th><th>Weights shipped</th></tr>
+      <tr><td>Qwen3-0.6B — run 1</td><td>31.11 (good: 100)</td><td>−3.33 (bar +5) — failed</td><td><span class="r">REFUSED</span></td><td>0</td></tr>
+      <tr><td>Qwen3-0.6B — clean re-run</td><td>31.11 (good: 100)</td><td>+32.22 — passed</td><td><span class="r">REFUSED</span></td><td>0</td></tr>
+      <tr><td>GPT2-124M</td><td>28.33 (good: 80)</td><td>−1.11 (bar +5) — failed</td><td><span class="r">REFUSED</span></td><td>0</td></tr>
+    </table></div>
+    <p>Both models looped on 60-item lists (ask for 60 different animals and get 16). The diagnosis was right — the causal proof passed on the clean Qwen re-run (+32.22) — but the edit itself did not reproduce the benefit: every attempt made the failing score worse at greedy temperature. So the gate refused, and <strong>0 weights shipped</strong>. The full reports are in <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/REAL-RUNS.md">REAL-RUNS.md</a>.</p>
+
+    <div class="plain">
+      <p><strong>What the numbers mean, in plain words.</strong> The kit works end to end — the pipeline test proves it. Fixing a real model is harder than the demo, and we are showing the failures too, not just the wins. The editor — how the fix is applied — is the gap we are working on next, not the diagnosis.</p>
+    </div>
+
+    <h3>Where it started — MIT's numbers</h3>
+    <p>MIT's team edited Qwen3.5-0.8B the same way — subtracting a direction from the MLP output columns of layers 15 and 19, just 131,072 weights (0.016% of the model):</p>
+    <div class="scroll"><table>
+      <tr><th>Benchmark</th><th>Before</th><th>After</th></tr>
+      <tr><td>MATH-500</td><td>7.9</td><td>48.1</td></tr>
+      <tr><td>GSM8K</td><td>13.8</td><td>67.1</td></tr>
+      <tr><td>IFEval</td><td>21.0</td><td>62.3</td></tr>
+      <tr><td>Token-limit hits</td><td>93.0%</td><td>33.1%</td></tr>
+    </table></div>
+    <p>Editing removes obstacles — it cannot add abilities. MIT's Gemma 3 270M control model could not be improved at all. Full detail: <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/RESEARCH.md">RESEARCH.md</a>.</p>
+  </section>
+
+  <section id="gate">
+    <h2>The eval gate</h2>
+    <p>The gate is the whole point. An edit ships only if <strong>all</strong> of these hold:</p>
+    <ul>
+      <li>The failing metric improves by <strong>at least 5 points</strong>.</li>
+      <li>Guards and neighbours regress by <strong>no more than 2 points</strong>.</li>
+      <li>The result holds at <strong>serving temperature and greedy (0.0)</strong>.</li>
+    </ul>
+    <p><strong>Gate fail = nothing ships.</strong> A gate that only says yes is not a gate. Our status page shows only gate-passing runs — no red, no failures on display — while the full honest log stays in REAL-RUNS.md.</p>
+  </section>
+
+  <section id="try">
+    <h2>Try it</h2>
+    <p>One command installs the skill. It downloads only <code>SKILL.md</code>, backs up any existing copy, and never runs code or asks for sudo.</p>
+    <pre>curl -fsSL https://raw.githubusercontent.com/AuremHQ/weight-space-programming/main/install.sh | bash</pre>
+    <h3>Commands</h3>
+    <ul>
+      <li><code>wsp demo</code> — run the pipeline test end to end.</li>
+      <li><code>wsp run</code> — run the full gated pipeline on your own small model.</li>
+      <li><code>wsp status</code> — show only gate-passing runs (wins only).</li>
+      <li><code>wsp serve</code> — a live status page on your machine (default port 8899).</li>
+    </ul>
+    <h3>Rules the kit will not break</h3>
+    <ul>
+      <li>Small open-weight models only — <strong>up to 3B parameters</strong>. Closed API models (ChatGPT, Claude) are refused: their weights are never in your hands.</li>
+      <li>No invented evaluations — you supply the prompts that define success.</li>
+      <li>No adding abilities — only removing a diagnosed obstacle.</li>
+      <li>No production-branch edits, no safety removal.</li>
+    </ul>
+    <p>Full install and tool docs: <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/kit/README.md">kit/README.md</a>. Machine-readable index: <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/llms.txt">llms.txt</a>.</p>
+  </section>
+
+  <section id="aurem">
+    <h2>Aurem's other software</h2>
+    <p>wsp-kit is one tool from Aurem. The team builds engineering tools for people who run software — and for people who don't code at all.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>ORA by Aurem</h3>
+        <p><strong>The AI engineer for non-technical founders.</strong> ORA is an autonomous AI software engineer: it connects to your GitHub repository, plans a change, writes the code, runs a pre-commit security scan (Vanguard), and ships it only after your approval — a 5-phase loop: Plan → Execute → Verify → Scan → Ship.</p>
+        <p>Free: 10 tasks a month, no credit card. Starter: $9/month flat. Browser app and terminal MCP server; no IDE required. Python, JavaScript, TypeScript, Go, Rust, Java, Kotlin, Swift, Ruby, PHP, C, and C++.</p>
+        <p><a href="https://auremcto.com">auremcto.com →</a></p>
+      </div>
+      <div class="card">
+        <h3>ora-grounding</h3>
+        <p><strong>Your LLM agent is lying to you with confidence. This catches it.</strong> Deterministic post-response grounding checks plus cross-family adversarial review for LLM chat agents — zero dependencies, bring your own LLM and your own database.</p>
+        <p>A real production case: a chat agent claimed it fixed a file that did not exist. ora-grounding caught the invented file instantly, with zero LLM calls in the check itself. About 500 lines of Python, MIT licensed.</p>
+        <p><a href="https://github.com/AuremHQ/ora-grounding">github.com/AuremHQ/ora-grounding →</a></p>
+      </div>
+    </div>
+    <p>All of Aurem's public work: <a href="https://github.com/AuremHQ">github.com/AuremHQ</a>. AUREM is a trademark of Polaris Built Inc. (Canadian Intellectual Property Office, Application No. 2492318).</p>
+  </section>
+
+  <section id="faq" class="faq">
+    <h2>Questions, answered</h2>
+    <details>
+      <summary>What is wsp-kit?</summary>
+      <p>wsp-kit by Aurem is a free, open-source engineering tool for small models. It tries to fix one specific, repeatable failure in a small open-weight model by editing its weights directly — no retraining, no fine-tuning, no gradients.</p>
+    </details>
+    <details>
+      <summary>Does wsp-kit fix real models?</summary>
+      <p>Not yet. The pipeline test passed (failing 64.14 → 75.43, +11.29), but all three real-model runs (Qwen3-0.6B twice, GPT2-124M) failed the eval gate, so 0 weights shipped. The numbers are published in <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/REAL-RUNS.md">REAL-RUNS.md</a>.</p>
+    </details>
+    <details>
+      <summary>How do I try wsp-kit?</summary>
+      <p>One command installs the skill: <code>curl -fsSL https://raw.githubusercontent.com/AuremHQ/weight-space-programming/main/install.sh | bash</code>. Then run <code>wsp demo</code> for the pipeline test or <code>wsp run</code> on your own small model.</p>
+    </details>
+    <details>
+      <summary>Is wsp-kit free?</summary>
+      <p>Yes. Free for everyone, MIT licensed. A small model should not mean bad results.</p>
+    </details>
+    <details>
+      <summary>What is the eval gate?</summary>
+      <p>The eval gate re-runs the same prompts with the same settings after an edit. The edit ships only if the failing metric improves by at least 5 points with no more than 2 points regression on guards and neighbours, at serving temperature and greedy. If the numbers don't improve, nothing ships.</p>
+    </details>
+    <details>
+      <summary>Which models does wsp-kit support?</summary>
+      <p>Small open-weight models up to 3B parameters that you control. Closed API models (ChatGPT, Claude) are refused — their weights are never in your hands.</p>
+    </details>
+    <details>
+      <summary>Can it make my model smarter?</summary>
+      <p>No. Editing removes obstacles — it cannot add abilities. MIT's Gemma 3 270M control model could not be improved at all. If the failure is a missing ability rather than a blocked one, the kit refuses.</p>
+    </details>
+    <details>
+      <summary>What happens if the gate fails?</summary>
+      <p>Nothing ships. The report is saved, the original weights are untouched, and the run is logged in REAL-RUNS.md. Our real-model runs all ended this way so far — and we publish them anyway.</p>
+    </details>
+    <details>
+      <summary>Does it work on ChatGPT or Claude?</summary>
+      <p>No. Those are closed API models — their weights are never in your hands, so there is nothing to edit. wsp-kit works on small open-weight models you can download and run yourself.</p>
+    </details>
+  </section>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p><strong style="color:#fff">wsp-kit by Aurem</strong> — an engineering tool for small models. Free for everyone, MIT licensed.</p>
+    <p>
+      <a href="https://github.com/AuremHQ/weight-space-programming">GitHub repo</a> ·
+      <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/llms.txt">llms.txt</a> ·
+      <a href="https://auremcto.com">ORA by Aurem</a> ·
+      <a href="https://github.com/AuremHQ/ora-grounding">ora-grounding</a> ·
+      <a href="https://github.com/AuremHQ">AuremHQ</a> ·
+      <a href="https://www.linkedin.com/in/tejinder-sandhu-156a3a181">Founder on LinkedIn</a>
+    </p>
+    <p>Inspired by MIT CSAIL's "Sparks of Weight-Space Programming" (blog post, not a peer-reviewed paper). Not affiliated with MIT.</p>
+  </div>
+</footer>
+</body>
+</html>
