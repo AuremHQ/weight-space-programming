@@ -9,7 +9,7 @@ This file is the real data behind the repo. No MIT numbers here — these are **
 
 | Run | Model | Failure | Diagnosis | Causal proof | Weights changed | Gate |
 |---|---|---|---|---|---|---|
-| Pipeline test | Toy weights (smoke test) | Failing 64.14 vs good 75.98 @ 0.7 | Row 0 | +18.00 — PASSED | **128 (0.77%)** | **PASSED — failing 64.14 → 75.43 (+11.29)** |
+| Pipeline test | Kit weights (smoke test) | Failing 64.14 vs good 75.98 @ 0.7 | Row 0 | +18.00 — PASSED | **128 (0.77%)** | **PASSED — failing 64.14 → 75.43 (+11.29)** |
 | Qwen run 1 | Qwen3-0.6B (596M, 28 layers) | 60-item lists loop (60 animals → 16 distinct) | Layers [27, 26] | −3.33 — FAILED | **0** | **FAILED — nothing shipped** |
 | Qwen run 2 | Qwen3-0.6B | Same failure | Layers [27, 26] | **+32.22 — PASSED** | **0** | **FAILED — nothing shipped** |
 | Qwen clean re-run | Qwen3-0.6B | Same failure, restore bug fixed | Layers [27, 26] | **+32.22 — PASSED** | **0** | **FAILED — nothing shipped** |
@@ -19,7 +19,7 @@ This file is the real data behind the repo. No MIT numbers here — these are **
 
 - Failing set: 64.14 @ temp 0.7 → **75.43 after edit (+11.29)**
 - Weights changed: 128 (0.77%), attempt 1, gate passed at temp 0.7 AND greedy 0.0.
-- This is a synthetic toy model. It proves the pipeline runs end-to-end — it is not a language-model result.
+- This is a synthetic test model built into the kit. It proves the pipeline runs end-to-end — it is not a language-model result.
 
 ## Qwen run 1 — Qwen3-0.6B (~32 min, CPU bf16)
 
