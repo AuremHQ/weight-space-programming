@@ -143,7 +143,7 @@
     </div>
     <div class="btns">
       <a class="btn btn-gold" href="https://github.com/AuremHQ/weight-space-programming">View on GitHub</a>
-      <a class="btn btn-ghost" href="https://github.com/AuremHQ/weight-space-programming">⭐ Star the repo</a>
+      <a class="btn btn-ghost" href="https://github.com/AuremHQ/weight-space-programming/blob/main/REAL-RUNS.md">See the real runs →</a>
       <a class="btn btn-ghost" href="https://auremcto.com">ORA by Aurem →</a>
     </div>
     <pre>curl -fsSL https://raw.githubusercontent.com/AuremHQ/weight-space-programming/main/install.sh | bash</pre>
@@ -161,7 +161,7 @@
 
   <section id="how">
     <h2>How it works</h2>
-    <p>wsp-kit follows the weight-space programming idea from MIT CSAIL's research blog <a href="https://www.csail.mit.edu/news/sparks-of-weight-space-programming">"Sparks of Weight-Space Programming"</a> (published 2026-11-02; a blog post, not a peer-reviewed paper, and not yet independently replicated). The idea: a model's failure can live in a small set of weights. Find those weights, change them a little, and the failure can go away — without retraining the model.</p>
+    <p>wsp-kit follows the weight-space programming idea from <a href="https://rikiyat.github.io/blog/weight-space-programming/">"Sparks of Weight-Space Programming"</a> — a research blog post by the MIT CSAIL team (published 2026-11-02; a blog post, not a peer-reviewed paper, and not yet independently replicated). The idea: a model's failure can live in a small set of weights. Find those weights, change them a little, and the failure can go away — without retraining the model.</p>
     <div class="steps">
       <div class="step"><div class="n">0</div><h3>Cheap fix first</h3><p>Before touching any weight, the kit tries the free knobs — temperature first. If a setting fixes it, no edit is needed.</p></div>
       <div class="step"><div class="n">1</div><h3>Detect</h3><p>Measure the failure, then prove the cause: disable the suspected weights and check whether the failure disappears. The bar is +5 points — no proof, no edit.</p></div>
@@ -193,6 +193,7 @@
       <tr><td>GPT2-124M</td><td>28.33 (good: 80)</td><td>−1.11 (bar +5) — failed</td><td><span class="r">REFUSED</span></td><td>0</td></tr>
     </table></div>
     <p>Both models looped on 60-item lists (ask for 60 different animals and get 16). The diagnosis was right — the causal proof passed on the clean Qwen re-run (+32.22) — but the edit itself did not reproduce the benefit: every attempt made the failing score worse at greedy temperature. So the gate refused, and <strong>0 weights shipped</strong>. The full reports are in <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/REAL-RUNS.md">REAL-RUNS.md</a>.</p>
+    <p>A second Qwen run also passed the causal proof (+32.22), but its attempt numbers were contaminated by a restore bug — the clean re-run above replaced it. The full story is in REAL-RUNS.md.</p>
 
     <div class="plain">
       <p><strong>What the numbers mean, in plain words.</strong> The kit works end to end — the pipeline test proves it. Fixing a real model is harder than the demo, and we are showing the failures too, not just the wins. The editor — how the fix is applied — is the gap we are working on next, not the diagnosis.</p>
@@ -271,7 +272,7 @@
     </details>
     <details>
       <summary>Does wsp-kit fix real models?</summary>
-      <p>Not yet. The pipeline test passed (failing 64.14 → 75.43, +11.29), but all three real-model runs (Qwen3-0.6B twice, GPT2-124M) failed the eval gate, so 0 weights shipped. The numbers are published in <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/REAL-RUNS.md">REAL-RUNS.md</a>.</p>
+      <p>Not yet. The pipeline test passed (failing 64.14 → 75.43, +11.29), but all four real-model runs (Qwen3-0.6B three times — run 1, run 2, and a clean re-run — plus GPT2-124M) failed the eval gate, so 0 weights shipped. The numbers are published in <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/REAL-RUNS.md">REAL-RUNS.md</a>.</p>
     </details>
     <details>
       <summary>How do I try wsp-kit?</summary>
@@ -315,7 +316,7 @@
       <a href="https://github.com/AuremHQ">AuremHQ</a> ·
       <a href="https://www.linkedin.com/in/tejinder-sandhu-156a3a181">Founder on LinkedIn</a>
     </p>
-    <p>Inspired by MIT CSAIL's "Sparks of Weight-Space Programming" (blog post, not a peer-reviewed paper). Not affiliated with MIT.</p>
+    <p>Inspired by MIT CSAIL's "Sparks of Weight-Space Programming" (blog post, not a peer-reviewed paper). Not affiliated with MIT. Numbers current as of 5 November 2026.</p>
   </div>
 </footer>
 </body>
