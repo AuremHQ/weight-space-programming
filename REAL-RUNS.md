@@ -12,6 +12,7 @@ This file is the real data behind the repo. No MIT numbers here — these are **
 | Pipeline test | Toy weights (smoke test) | Failing 64.14 vs good 75.98 @ 0.7 | Row 0 | +18.00 — PASSED | **128 (0.77%)** | **PASSED — failing 64.14 → 75.43 (+11.29)** |
 | Qwen run 1 | Qwen3-0.6B (596M, 28 layers) | 60-item lists loop (60 animals → 16 distinct) | Layers [27, 26] | −3.33 — FAILED | **0** | **FAILED — nothing shipped** |
 | Qwen run 2 | Qwen3-0.6B | Same failure | Layers [27, 26] | **+32.22 — PASSED** | **0** | **FAILED — nothing shipped** |
+| Qwen clean re-run | Qwen3-0.6B | Same failure, restore bug fixed | Layers [27, 26] | **+32.22 — PASSED** | **0** | **FAILED — nothing shipped** |
 | GPT-2 run | GPT2-124M (124M, 12 layers) | 60-item lists loop (animals 1.7, countries 5.0, fruits 1.7) | Layers [10, 11] | −1.11 — FAILED | **0** | **FAILED — nothing shipped** |
 
 ## Pipeline test (smoke test — proves the pipeline, not a real fix)
@@ -33,8 +34,19 @@ This file is the real data behind the repo. No MIT numbers here — these are **
 
 - **One design change:** diagnosis contrast = **neighbours set** (short healthy lists) instead of the good set.
 - **Causal proof flipped: 22.78 → 55.00 (+32.22) — PASSED.** The confound hypothesis was confirmed.
-- **Attempts:** 3 ran. Best attempt (1.0×, top-2 layers): greedy failing **+3.89**, but neighbours regressed 5.0 — missed the gate by 4.11 points. Attempts 2 and 3 were worse. **Gate: false. 0 weights.**
-- **Correction (found later):** a restore bug meant the ablation was never restored between attempts, so run 2's attempt numbers (+3.89 / −12.78 / −6.11) are **contaminated, not clean single-attempt measurements**. The gate verdict (false) still stands. A clean re-run is in progress for trustworthy attempt numbers.
+- **Attempts — CONTAMINATED, do not use as results:** 3 ran, but a restore bug meant the ablation was never restored between attempts, so the numbers quoted here (+3.89 / −12.78 / −6.11, misses 4.11 / 53.78 / 94.61) are **not clean single-attempt measurements**. The gate verdict (false) still stands — only the attempt numbers were wrong.
+- **Clean re-run (below) replaces these numbers.**
+
+## Qwen clean re-run — same design, restore fixed (~43 min, CPU bf16)
+
+- **What changed:** only the restore fix (indexed assignment in `real_runner.py`). Same eval, same neighbours contrast, same plan. Report: `runs/qwen-clean/report.json`.
+- **Reproduced run 2 exactly:** sweep 22.78 / 31.11 / 32.22 / 31.67, baselines failing **31.11 @ 0.7** (gap 68.89), diagnosis layers **[27, 26]** (norms [78.048, 37.183]), causal proof **+32.22 — PASSED**. The fix changed only the attempt measurements, as it should.
+- **Clean attempts (all failed at greedy, so serving temp was never evaluated):**
+  - Attempt 1 (1.0×, top-2, 130,945 w, 0.022%): greedy failing **−11.11**, neighbours −22.5, miss 36.61.
+  - Attempt 2 (2.0×, top-2, 130,996 w, 0.022%): greedy failing **−11.11**, neighbours −30.0, miss 44.11.
+  - Attempt 3 (1.0×, top-1 layer 27, 65,487 w, 0.011%): greedy failing **−12.22**, neighbours −17.5, miss 32.72 — **best attempt**.
+- **Gate: false. 0 weights.** Nothing shipped.
+- **What this means:** run 2's "near-miss" story (best attempt +3.89, only 4.11 short) was entirely a bug artefact. The clean data says every edit variant made the failing set *worse* at greedy while also regressing neighbours 17.5–30 points. The direction-subtraction edit does not reproduce the ablation benefit at all — the editor is the gap, not the diagnosis.
 
 ## GPT-2 run — GPT2-124M (~35.5 min, CPU bf16, plain completion, no chat template)
 
