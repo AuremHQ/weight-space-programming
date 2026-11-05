@@ -1,6 +1,6 @@
 """The universal real-model pipeline, in one place.
 
-Same discipline as the toy pipeline in ``wsp.pipeline``, but nothing
+Same discipline as the kit pipeline in ``wsp.pipeline``, but nothing
 is baked in: the model comes from a HuggingFace id, the prompts and
 scorers from an eval file, the layers and columns from measured
 activations. Steps, in order:
@@ -32,7 +32,7 @@ activations. Steps, in order:
    passes, NOTHING ships — the report ranks all attempts, shows how
    far the best one missed the gate, and suggests what to try next.
    The gate rule is absolute: a failing edit is never shipped.
-5. Report in schema v1 (same fields as the toy report) plus an
+5. Report in schema v1 (same fields as the kit report) plus an
    additive ``real_demo`` block with the layers, columns, alphas and
    eval settings. Edited weights are saved only on a gate pass, to a
    new directory, never over the original files. The pipeline also
@@ -238,6 +238,12 @@ def run_real_pipeline(model_id, eval_path, out_dir, dtype="bfloat16",
     # Eval file first: bad user input must fail fast, before the
     # (slow) model import and load.
     data = evalfile.load_eval_file(eval_path)
+    # Status chip: mark this run as active so `wsp status` / `wsp
+    # serve` can show RUNNING. Removed when the report is written
+    # (see _write_report); a leftover marker is ignored once its
+    # process is gone.
+    from .status import write_running_marker
+    write_running_marker(out_dir, model_id, eval_path)
     serving = data.get("serving_temperature", 0.7)
     gate_temps = data.get("gate_temperatures", [serving, 0.0])
     # SKILL requires the gate at serving temperature AND greedy, so
@@ -414,7 +420,7 @@ def run_real_pipeline(model_id, eval_path, out_dir, dtype="bfloat16",
                                     attempt_alphas[i])
             saved.append(s)
             changed_total += c
-        # True percent, same as the toy pipeline since the 0.1.1
+        # True percent, same as the kit pipeline since the 0.1.1
         # percent-label fix (0.77, not the fraction 0.0077).
         pct = changed_total / model.total_params * 100
         per_temp = {}
@@ -655,6 +661,11 @@ def _real_block(model_id, model, data, dtype, top_layers, columns, per_layer,
 
 
 def _write_report(out_dir, rep):
+    # Every exit path writes the report here, so the running marker
+    # is cleared here too — the status chip stops showing RUNNING
+    # exactly when the run is done.
+    from .status import remove_running_marker
+    remove_running_marker(out_dir)
     os.makedirs(out_dir, exist_ok=True)
     with open(os.path.join(out_dir, "report.json"), "w") as f:
         json.dump(rep, f, indent=2)

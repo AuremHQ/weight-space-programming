@@ -1,7 +1,7 @@
-"""Command line: `wsp demo` runs the toy pipeline end to end.
+"""Command line: `wsp demo` runs the kit pipeline end to end.
 
 The demo prints every number it measures and writes two files into
-the output directory: report.json and toy_edited.npz. The edited
+the output directory: report.json and kit_edited.npz. The edited
 weights are always a separate file — the kit never overwrites its
 input, and here the input is generated in memory, so there is nothing
 to overwrite in the first place.
@@ -62,10 +62,10 @@ def cmd_demo(args):
     with open(os.path.join(args.out_dir, "report.json"), "w") as f:
         json.dump(rep, f, indent=2)
     if edited is not None:
-        weights.save_weights(os.path.join(args.out_dir, "toy_edited.npz"), edited)
+        weights.save_weights(os.path.join(args.out_dir, "kit_edited.npz"), edited)
     print(f"wrote {args.out_dir}/report.json")
     if edited is not None:
-        print(f"wrote {args.out_dir}/toy_edited.npz")
+        print(f"wrote {args.out_dir}/kit_edited.npz")
     return code
 
 
@@ -202,15 +202,29 @@ def cmd_version(_args):
     return 0
 
 
+def cmd_status(args):
+    """`wsp status`: one line — chip, approved improvements, best gain,
+    real-model passes. Reads real report.json files; exits 0."""
+    from .status import status_line
+    print(status_line(args.runs_dir))
+    return 0
+
+
+def cmd_serve(args):
+    """`wsp serve`: the status page on localhost until Ctrl+C."""
+    from .serve import serve
+    return serve(runs_dir=args.runs_dir, port=args.port)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="wsp",
         description="Weight-space programming, runnable. See the kit README for the full story.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
-    p_demo = sub.add_parser("demo", help="run the toy pipeline end to end")
+    p_demo = sub.add_parser("demo", help="run the kit pipeline end to end")
     p_demo.add_argument("--out-dir", default="wsp-demo-out",
-                        help="where report.json and toy_edited.npz go")
+                        help="where report.json and kit_edited.npz go")
     p_demo.set_defaults(func=cmd_demo)
     p_run = sub.add_parser(
         "run", help="run the universal real-model pipeline on an eval file")
@@ -264,6 +278,21 @@ def main(argv=None):
     p_watch.set_defaults(func=cmd_watch)
     p_ver = sub.add_parser("version", help="print the kit version")
     p_ver.set_defaults(func=cmd_version)
+    p_status = sub.add_parser(
+        "status",
+        help="one line: chip, approved improvements, best gain")
+    p_status.add_argument("--runs-dir", default=".",
+                          help="directory scanned for report.json files "
+                               "(default: current directory)")
+    p_status.set_defaults(func=cmd_status)
+    p_serve = sub.add_parser(
+        "serve", help="the status page on localhost until Ctrl+C")
+    p_serve.add_argument("--runs-dir", default=".",
+                         help="directory scanned for report.json files "
+                              "(default: current directory)")
+    p_serve.add_argument("--port", type=int, default=8899,
+                         help="localhost port (default 8899)")
+    p_serve.set_defaults(func=cmd_serve)
     args = parser.parse_args(argv)
     return args.func(args)
 

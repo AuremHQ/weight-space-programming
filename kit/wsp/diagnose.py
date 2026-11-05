@@ -1,21 +1,21 @@
 """Diagnosis: baseline, cheap-fix sweep, causal proof, direction estimate.
 
 These functions work on any model object with the same two methods as
-the toy: ``forward(X)`` returning ``(logits, hidden)`` and nothing else
+the kit: ``forward(X)`` returning ``(logits, hidden)`` and nothing else
 fancy. A real-model runner just needs those two methods; the rest of
 the kit does not care what is behind them.
 """
 
 import numpy as np
 
-from . import toy
+from . import kit_test
 
 CAUSAL_MIN_CHANGE = 5.0
 
 
 def baseline(weights, sets, targets, temperature):
     return {
-        name: toy.expected_accuracy(weights, X, targets[name], temperature)
+        name: kit_test.expected_accuracy(weights, X, targets[name], temperature)
         for name, X in sets.items()
     }
 
@@ -28,7 +28,7 @@ def temperature_sweep(weights, sets, targets, temperatures=(0.0, 0.7, 1.0, 1.5))
 
 
 def mean_hidden(weights, X):
-    _, h = toy.forward(weights, X)
+    _, h = kit_test.forward(weights, X)
     return h.mean(axis=0)
 
 
@@ -44,14 +44,14 @@ def estimate_direction(weights, sets):
     return d / norm
 
 
-def prove_cause(weights, sets, targets, row=toy.DEFECT_CLASS):
+def prove_cause(weights, sets, targets, row=kit_test.DEFECT_CLASS):
     """Ablation test. Temporarily zero the suspect row and see whether
     the failure moves. A suspect that does not move the failure when
     removed is not a diagnosis, and must not be edited."""
-    before = toy.expected_accuracy(weights, sets["failing"], targets["failing"], 0.0)
+    before = kit_test.expected_accuracy(weights, sets["failing"], targets["failing"], 0.0)
     ablated = {k: v.copy() for k, v in weights.items()}
     ablated["W2"][row] = 0.0
-    after = toy.expected_accuracy(ablated, sets["failing"], targets["failing"], 0.0)
+    after = kit_test.expected_accuracy(ablated, sets["failing"], targets["failing"], 0.0)
     change = after - before
     return {
         "suspect_row": row,

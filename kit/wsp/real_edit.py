@@ -1,7 +1,7 @@
 """The real-model edit: subtract a direction from MLP output columns.
 
-This is the transformer version of the toy edit in ``wsp.edit``. In the
-toy, one row of W2 (one output class over hidden units) loses
+This is the transformer version of the kit edit in ``wsp.edit``. In the
+kit, one row of W2 (one output class over hidden units) loses
 ``alpha * direction``. In a transformer MLP, the output projection
 (``down_proj`` / ``c_proj`` / ``dense_4h_to_h`` — see ``wsp.layers``)
 maps intermediate activations back into the residual stream, so one

@@ -1,7 +1,7 @@
 """Loading, saving, and counting weights.
 
 Two formats, on purpose. ``.npz`` always works (numpy only) and is what
-the toy model and the tests use. ``.safetensors`` works when the
+the kit model and the tests use. ``.safetensors`` works when the
 ``safetensors`` package is installed, which is the format real
 open-weight models ship in. Nothing here trains, and nothing here ever
 overwrites the file it loaded from: edits are saved to a new path.

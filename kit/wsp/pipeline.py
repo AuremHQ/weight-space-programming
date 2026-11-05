@@ -6,7 +6,7 @@ estimate, then up to 3 edit attempts. The gate must pass at the serving
 temperature AND at greedy (temperature 0). Anything else is a discard.
 """
 
-from . import __version__, diagnose, edit, gate, report, toy
+from . import __version__, diagnose, edit, gate, report, kit_test
 
 SERVING_TEMPERATURE = 0.7
 GATE_TEMPERATURES = (0.7, 0.0)
@@ -15,10 +15,10 @@ MAX_ATTEMPTS = 3
 
 
 def run_pipeline():
-    clean = toy.build_clean_weights()
-    sets = toy.build_sets()
-    targets = toy.clean_targets(clean, sets)
-    broken, _ = toy.plant_defect(clean, sets["failing"])
+    clean = kit_test.build_clean_weights()
+    sets = kit_test.build_sets()
+    targets = kit_test.clean_targets(clean, sets)
+    broken, _ = kit_test.plant_defect(clean, sets["failing"])
 
     sweep = diagnose.temperature_sweep(broken, sets, targets)
     cause = diagnose.prove_cause(broken, sets, targets)
@@ -33,7 +33,7 @@ def run_pipeline():
     chosen = None
     for alpha in ALPHA_CANDIDATES[:MAX_ATTEMPTS]:
         candidate, changed, frac = edit.apply_edit(
-            broken, toy.DEFECT_CLASS, direction, alpha
+            broken, kit_test.DEFECT_CLASS, direction, alpha
         )
         per_temp = {}
         passed = True
@@ -59,7 +59,7 @@ def run_pipeline():
     before = diagnose.baseline(broken, sets, targets, SERVING_TEMPERATURE)
     if chosen is None:
         rep = report.make_report(
-            model="toy (2-layer MLP, 64-128-64, seeded — not a language model)",
+            model="kit (2-layer MLP, 64-128-64, seeded — not a language model)",
             edited_row=None,
             weights_changed=0,
             weights_changed_pct=0.0,
@@ -67,7 +67,7 @@ def run_pipeline():
             after=before,
             gate={"passed": False, "reason": "no attempt passed the gate"},
             temperatures_checked=list(sweep.keys()),
-            editor="toy estimator — no LLM; direction estimated from hidden activations",
+            editor="kit estimator — no LLM; direction estimated from hidden activations",
             tools=["numpy"],
             attempts_used=len(attempts),
             attempts=attempts,
@@ -77,15 +77,15 @@ def run_pipeline():
     candidate, changed, frac = chosen
     after = diagnose.baseline(candidate, sets, targets, SERVING_TEMPERATURE)
     rep = report.make_report(
-        model="toy (2-layer MLP, 64-128-64, seeded — not a language model)",
-        edited_row=toy.DEFECT_CLASS,
+        model="kit (2-layer MLP, 64-128-64, seeded — not a language model)",
+        edited_row=kit_test.DEFECT_CLASS,
         weights_changed=changed,
         weights_changed_pct=frac * 100,
         before=before,
         after=after,
         gate={"passed": True, "by_temperature": attempts[-1]["gate_by_temperature"]},
         temperatures_checked=list(sweep.keys()),
-        editor="toy estimator — no LLM; direction estimated from hidden activations",
+        editor="kit estimator — no LLM; direction estimated from hidden activations",
         tools=["numpy"],
         attempts_used=len(attempts),
         attempts=attempts,
