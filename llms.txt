@@ -20,3 +20,4 @@
 - Gate: an edit ships only if the failing metric improves by at least 5 points with no more than 2 points regression on guards and neighbours, at serving temperature and greedy.
 - Real results so far: pipeline test passed (failing 64.14 → 75.43, +11.29, 128 weights, 0.77%). Qwen3-0.6B run 1, Qwen clean re-run, and GPT2-124M all failed the gate — 0 weights shipped. No real-model edit has passed the gate yet.
 - Source: https://github.com/AuremHQ/weight-space-programming
+- Website: https://auremhq.github.io/weight-space-programming/
