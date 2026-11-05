@@ -1,0 +1,55 @@
+{
+  "report_version": 1,
+  "kit_version": "0.2.0",
+  "model": "Qwen/Qwen3-0.6B (real open-weight model, CPU)",
+  "edited_row": null,
+  "weights_changed": 0,
+  "weights_changed_pct": 0.0,
+  "before": {
+    "failing": 31.11111111111111,
+    "good": 100.0,
+    "neighbours": 100.0
+  },
+  "after": {
+    "failing": 31.11111111111111,
+    "good": 100.0,
+    "neighbours": 100.0
+  },
+  "gate": {
+    "passed": false,
+    "reason": "not causal: zeroing the suspect columns moved the failing subset by only -3.33 points \u2014 no edit"
+  },
+  "temperatures_checked": [
+    0.0,
+    0.7,
+    1.0,
+    1.5
+  ],
+  "editor": "numerical activation-difference estimator \u2014 no LLM; direction estimated from MLP activations",
+  "tools": [
+    "torch",
+    "transformers",
+    "numpy"
+  ],
+  "attempts_used": 0,
+  "attempts": [],
+  "note": "Weight-space editing was demonstrated with GPT-6 Astra and is unproven for other models. This edit passed the eval gate above; verify independently before use.",
+  "real_demo": {
+    "model_id": "Qwen/Qwen3-0.6B",
+    "device": "cpu",
+    "total_params": 596049920,
+    "eval_name": "loop-fix-qwen3-0.6b",
+    "eval_file": "loop-fix-qwen3-0.6b.json",
+    "temperature_sweep_subset": {
+      "0.0": 22.777777777777782,
+      "0.7": 31.11111111111111,
+      "1.0": 32.22222222222222,
+      "1.5": 31.66666666666666
+    },
+    "causal_proof": {
+      "failing_subset_before": 22.777777777777782,
+      "failing_subset_after_ablation": 19.444444444444446,
+      "change_points": -3.3333333333333357
+    }
+  }
+}
