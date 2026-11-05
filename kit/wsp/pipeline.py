@@ -46,7 +46,7 @@ def run_pipeline():
         attempts.append({
             "alpha": alpha,
             "weights_changed": changed,
-            "weights_changed_pct": frac,
+            "weights_changed_pct": frac * 100,
             "gate_by_temperature": per_temp,
             "passed": passed,
         })
@@ -78,7 +78,7 @@ def run_pipeline():
         model="toy (2-layer MLP, 64-128-64, seeded — not a language model)",
         edited_row=toy.DEFECT_CLASS,
         weights_changed=changed,
-        weights_changed_pct=frac,
+        weights_changed_pct=frac * 100,
         before=before,
         after=after,
         gate={"passed": True, "by_temperature": attempts[-1]["gate_by_temperature"]},

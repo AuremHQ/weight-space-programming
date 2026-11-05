@@ -41,7 +41,7 @@ def cmd_demo(args):
         print(
             f"attempt {i}: alpha {a['alpha']} — "
             f"{a['weights_changed']} weights "
-            f"({a['weights_changed_pct']:.2%}) — passed: {a['passed']}"
+            f"({a['weights_changed_pct']:.2f}%) — passed: {a['passed']}"
         )
     print()
     if edited is None:

@@ -94,7 +94,7 @@ def toy_apply_edit(alpha: float):
         s["broken"], toy.DEFECT_CLASS, STATE["direction"], alpha
     )
     STATE["candidate"] = candidate
-    return {"weights_changed": changed, "weights_changed_pct": frac}
+    return {"weights_changed": changed, "weights_changed_pct": frac * 100}
 
 
 @mcp.tool()
