@@ -1,6 +1,6 @@
-# wsp-kit
+# wsp-kit by Aurem
 
-Weight-space programming, runnable. Point it at a small model's weights
+An engineering tool for small models. Weight-space programming, runnable. Point it at a small model's weights
 and a failure you can reproduce, and it diagnoses the failure in the
 weights, applies one tiny edit, and lets an eval gate decide whether
 the edit ships. No retraining, no gradients, no training loop.
@@ -45,7 +45,7 @@ That runs the full gated pipeline on a real model (see "Real models" below). For
 wsp demo
 ```
 
-This runs the toy pipeline (smoke test) end to end and writes `report.json` and
+This runs the kit pipeline (smoke test) end to end and writes `report.json` and
 `toy_edited.npz` into `wsp-demo-out/`. Real output:
 
 ```
@@ -85,7 +85,7 @@ at greedy, which is why the edit shipped.
 
 ## Real models
 
-The toy proves the pipeline. The real runner runs the same pipeline
+The kit test proves the pipeline. The real runner runs the same pipeline
 on a real open-weight model, with your eval file, from one command:
 
 ```
@@ -205,9 +205,9 @@ repo's [REAL-RUNS.md](../REAL-RUNS.md).
 
 ## What the pipeline test proves, and what it does not
 
-The pipeline test runs on a toy model: a two-layer network (64 inputs, 128
+The pipeline test runs on a small test model built into the kit: a two-layer network (64 inputs, 128
 hidden, 64 outputs) with a deliberately planted defect. Its numbers
-are real — they are measured, not made up — but they are toy numbers.
+are real — they are measured, not made up — but they are test numbers.
 They prove the pipeline works end to end: baseline, cheap-fix check,
 causal proof, edit, gate, report. They do not prove anything about a
 language model.
