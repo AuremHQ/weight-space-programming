@@ -11,6 +11,8 @@
 
 > From the team building **Ora by Aurem — https://auremcto.com** — an AI engineer for non-technical founders. ORA itself stays private; this skill is public so anyone can use it on their own models.
 
+> 🌐 **Website:** https://auremhq.github.io/weight-space-programming/ — the full detailed guide: our vision, the kit's performance, and Aurem's other software.
+
 > ⭐ **Star this repo** — the real runs are live below, with honest numbers.
 > 🔁 **Share it** with anyone running a small open model with one stubborn failure.
 
