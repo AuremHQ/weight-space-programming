@@ -32,13 +32,20 @@ pip install 'wsp-kit[mcp]'          # MCP server support
 pip install 'wsp-kit[safetensors]'  # .safetensors weights support
 ```
 
-## Quickstart
+## Quickstart — real models first
+
+```
+pip install 'wsp-kit[real]'   # torch + transformers + accelerate
+wsp run --model Qwen/Qwen3-0.6B --eval evals/loop-fix-qwen3-0.6b.json
+```
+
+That runs the full gated pipeline on a real model (see "Real models" below). For a fast pipeline check with no model download:
 
 ```
 wsp demo
 ```
 
-This runs the toy pipeline end to end and writes `report.json` and
+This runs the toy pipeline (smoke test) end to end and writes `report.json` and
 `toy_edited.npz` into `wsp-demo-out/`. Real output:
 
 ```
@@ -76,22 +83,137 @@ from 64.14 to 75.43 at the serving temperature, with no guard or
 neighbour regression. The gate passed at the serving temperature and
 at greedy, which is why the edit shipped.
 
-## What the demo proves, and what it does not
+## Real models (v0.2.0)
 
-The demo runs on a toy model: a two-layer network (64 inputs, 128
+The toy proves the pipeline. The real runner runs the same pipeline
+on a real open-weight model, with your eval file, from one command:
+
+```
+pip install 'wsp-kit[real]'   # torch + transformers + accelerate
+wsp run --model Qwen/Qwen3-0.6B --eval eval-loop.json
+```
+
+That single command does the whole flow with no manual steps in
+between: temperature sweep (Step 0, the cheap knob) → baselines →
+diagnosis → causal proof → up to 3 edit attempts → gate → report.
+It writes `report.json` into `wsp-real-out/` and, only on a gate
+pass, the edited model plus `edit.json` (the reproducible edit
+recipe). The original model files are never touched: edited weights
+always go to a new directory.
+
+**Eval files (format v1).** A JSON file with three prompt sets —
+`failing`, `good`, `neighbours` — each with a scorer (`loop`,
+`contains`, `finish`, or `sequence`) and prompts. The pipeline
+detects whatever failure your eval shows (loops, wrong answers,
+format breaks) and runs the same Step 0 → Step 1 → Step 2 → Step 3
+flow. See `evals/` for the demo eval file and its format notes.
+
+**Best passing, not first passing.** Within the skill budget (max 3
+attempts, at most 1% of weights), the pipeline evaluates every
+attempt variant — base alpha on the top 2 diagnosed layers, double
+alpha on the same layers, base alpha on the single strongest layer —
+and ships the BEST PASSING one (largest serving-temperature primary
+gain, tie-break: fewer weights changed). Temperatures are evaluated
+greedy-first: if the gate already fails at greedy, the remaining
+temperatures are skipped for that attempt, because a gate fail at
+any temperature is a gate fail overall.
+
+**Fix on failure only.** If the baseline shows no real failure (the
+failing set within 5 points of the good set at serving temperature),
+the pipeline stops before any edit. A healthy model is not edited.
+
+**Gate fail = nothing ships.** If no attempt passes, no weights are
+written. The report still ranks all attempts, shows how far the best
+one missed the gate (primary shortfall and guard excess, in points),
+and suggests what to try next — so the best is visible without
+shipping a failing edit. The gate rule is absolute: it is not
+overridden by any flag.
+
+**Watch mode (opt-in).** `wsp watch` monitors a directory for new
+eval files and runs the same gated pipeline on each one:
+
+```
+wsp watch --model Qwen/Qwen3-0.6B --watch-dir ./evals-incoming --out-dir ./wsp-watch-out
+```
+
+Each run writes its own timestamped output directory with its own
+report. Stop it with Ctrl+C. Watch mode NEVER applies an edit to a
+live or production model — producing the edited file plus report is
+the kit's job; applying it is always your deliberate step, with
+`wsp apply-edit --model <id> --edit <edit.json> --out-dir <dir>`.
+
+**Scope boundary.** The runner supports open-weight models only,
+up to 3 billion parameters, loaded through HuggingFace Auto classes
+with MLP layers discovered generically (Qwen, Llama, Gemma, Mistral
+and other families — no hardcoded module path). Closed models (GPT,
+Claude, and the like) are OUT of scope by design: their weights are
+unavailable, so no weight edit is possible there.
+
+**Worked example: Qwen3-0.6B list-loop demo (verified run, 2026-11-05).**
+Eval file `evals/loop-fix-qwen3-0.6b.json`: 3 failing prompts (list
+60 distinct animals / countries / fruits, `distinct` scorer, 60
+expected), 4 good prompts (factual QA, `contains` scorer), 4
+neighbour prompts (short 5–10 item lists, `distinct` scorer). 512
+tokens, chat template on, thinking off. Command:
+
+```
+wsp run --model Qwen/Qwen3-0.6B --eval evals/loop-fix-qwen3-0.6b.json
+```
+
+Measured, not made up (596,049,920 parameters, CPU, bfloat16, ~32
+minutes). Step 0 sweep, failing subset: 22.78 at greedy, 31.11 at
+0.7, 32.22 at 1.0, 31.67 at 1.5 — no temperature restored it to
+within 5 points of the good subset (100.00), so no cheap fix.
+Baselines: failing 31.11 at serving temperature 0.7 and 22.78 at
+greedy; good 100.00 at both; neighbours 100.00 at 0.7 and 95.00 at
+greedy. Failure gap at serving temperature: 68.89 points — a real
+failure (verified separately: a 60-animal list came back as 60 lines
+but only 16 distinct animals, score 26.7). Diagnosis picked layers
+27 and 26 (direction norms 82.459 and 48.027). Causal proof: zeroing
+the suspect columns moved the failing subset from 22.78 to 19.44
+(−3.33 points) — below the 5-point bar, so **not causal: the
+pipeline stopped, no edit was made, nothing shipped**. The output
+directory holds only `report.json`.
+
+Read that outcome the way it is meant: the pipeline ran end to end
+on a real model and refused to edit without a causal diagnosis. That
+refusal is the feature, not a bug — it is the same discipline as
+MIT's Gemma control, which could not be improved either. What this
+run does NOT show is a passing edit; a passing real-model edit is
+still unproven, and no number here claims otherwise. Task pack:
+`tasks/loop-fix-real/task.json`.
+
+**Qwen run 2 — same model, diagnosis contrast fixed (neighbours set
+instead of the good set).** Causal proof flipped to **+32.22 (22.78 →
+55.00) — PASSED**. Three edit attempts ran; the best moved greedy
+failing by +3.89 but regressed neighbours by 5.0, so the **gate
+failed again, 0 weights**. (Note: run 2's attempt numbers were later
+found contaminated by a restore bug — a clean re-run is in progress
+for trustworthy attempt numbers. The gate verdict still stands.)
+
+**GPT-2 run — GPT2-124M, plain completion, no chat template (~35.5
+min, CPU).** 60-item lists loop (animals 1.7, countries 5.0, fruits
+1.7). Baselines @ 0.7: failing **28.33**, good 80, neighbours 100 —
+a **51.67-point** gap. Diagnosis: layers **[10, 11]**, norms 21.429 /
+20.613. Causal proof **−1.11 — FAILED**. **0 attempts, 0 weights,
+gate false, nothing shipped.** Full numbers for all three runs: the
+repo's [REAL-RUNS.md](../REAL-RUNS.md).
+
+## What the pipeline test proves, and what it does not
+
+The pipeline test runs on a toy model: a two-layer network (64 inputs, 128
 hidden, 64 outputs) with a deliberately planted defect. Its numbers
 are real — they are measured, not made up — but they are toy numbers.
 They prove the pipeline works end to end: baseline, cheap-fix check,
 causal proof, edit, gate, report. They do not prove anything about a
 language model.
 
-For a real model you need two things this kit does not ship in v0.1.0:
-a runner for that model's weights (the kit works on any object with a
-`forward` method returning logits and hidden states), and a
-frontier-class editor model to do the reasoning. MIT's result used
-GPT-6 Astra; whether other editors do this equally well is unproven,
-and every report this kit writes names its editor for exactly that
-reason.
+For a real model, v0.2.0 ships the runner (see "Real models" above)
+but not a frontier-class editor: the direction here is numerical,
+estimated from measured activations, with no LLM involved. MIT's
+result used GPT-6 Astra; whether other editors do this equally well
+is unproven, and every report this kit writes names its editor for
+exactly that reason.
 
 ## How it works
 
@@ -133,7 +255,7 @@ The same pipeline, callable from any MCP-compatible harness or agent:
 }
 ```
 
-Tools (all stable in v0.1.0):
+Tools (all stable in v0.2.0):
 
 | Tool | What it does |
 |---|---|
@@ -160,10 +282,21 @@ kit/
     gate.py        eval gate
     report.py      versioned JSON report
     pipeline.py    the full pipeline, used by CLI and MCP alike
-    cli.py         `wsp demo`, `wsp version`
+    real_runner.py load/run real models (3B cap), greedy-first gate
+    real_pipeline.py  the real-model pipeline: sweep → proof → attempts
+    real_edit.py   layout-aware column edits (Linear + Conv1D)
+    layers.py      generic MLP down-proj discovery across families
+    evalfile.py    eval format v1 (failing / good / neighbours)
+    scoring.py     scorers: distinct, contains, loop, finish, sequence
+    watch.py       opt-in watch mode (wsp watch)
+    cli.py         `wsp demo`, `wsp run`, `wsp watch`, `wsp apply-edit`, `wsp version`
     mcp_server.py  MCP tools
+  evals/
+    loop-fix-qwen3-0.6b.json
+    loop-fix-gpt2-124m.json
   tasks/
     loop-fix-toy/task.json
+    loop-fix-real/task.json
   tests/
     test_kit.py    unittest, no extra dependencies
 ```
@@ -193,8 +326,9 @@ old one, never as a silent replacement.
 - Weight edits can bypass safety behaviour. That is why safety-removal
   requests are refused and every edit goes through evaluation and
   human review.
-- The toy demo is a toy. The real-model demo from the repo's DEMO-PLAN
-  is still the next milestone.
+- Real runs are live (Qwen + GPT-2, see the repo's REAL-RUNS.md) —
+  but no real-model edit has passed the gate yet. A passing
+  real-model edit is still the next milestone.
 
 ## License
 

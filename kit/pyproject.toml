@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wsp-kit"
-version = "0.1.1"
+version = "0.2.0"
 description = "Weight-space programming, runnable: diagnose a small model's failure in its weights, apply one tiny edit, and let an eval gate decide whether it ships."
 readme = "README.md"
 license = { text = "MIT" }
@@ -15,6 +15,7 @@ authors = [{ name = "Ora by Aurem team", email = "hello@auremcto.com" }]
 [project.optional-dependencies]
 mcp = ["mcp>=2"]
 safetensors = ["safetensors"]
+real = ["torch", "transformers", "accelerate"]
 
 [project.scripts]
 wsp = "wsp.cli:main"
