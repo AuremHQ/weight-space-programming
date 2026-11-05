@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wsp-kit"
-version = "0.1.0"
+version = "0.1.1"
 description = "Weight-space programming, runnable: diagnose a small model's failure in its weights, apply one tiny edit, and let an eval gate decide whether it ships."
 readme = "README.md"
 license = { text = "MIT" }
