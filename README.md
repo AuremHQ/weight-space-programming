@@ -13,7 +13,7 @@
 
 > 🌐 **Website:** https://auremhq.github.io/weight-space-programming/ — the full detailed guide: our vision, the kit's performance, and Aurem's other software.
 
-> ⭐ **Star this repo** — the real runs are live below, with honest numbers.
+> ⭐ **Star this repo** — your one star encourages our team to keep building incredible things, free for everyone, and to grow this community. The real runs are live below, with honest numbers.
 > 🔁 **Share it** with anyone running a small open model with one stubborn failure.
 
 ---
@@ -165,6 +165,27 @@ That's the whole deal. No retraining bill, no blind trust.
 
 ---
 
+## Keep it improving — in the background, live
+
+Fixing a model once is not enough — it will fail at new things. So the kit can keep working in the background, and your running model keeps getting better without you doing anything.
+
+**What it is, in plain words:**
+- **`wsp loop` watches for failures.** When your model fails at something — you write the failure in a file, or drop in a test file — the kit runs the gated pipeline on it. If the fix passes the gate, it becomes a new version. If it fails the gate, nothing ships, and the same failure is never retried.
+- **`wsp serve-model` serves your model and applies each new passing fix to the SAME running model** — the old weights are overridden by the updated ones, in place. No reload, no restart, no swap. The next prompt automatically uses the updated weights. If a fix ever feels wrong, one rollback undoes it exactly.
+
+**How to run it (two commands, two terminals):**
+
+```
+wsp loop --model Qwen/Qwen3-0.6B --watch-dir ./evals-incoming --out-dir ./wsp-loop-out
+wsp serve-model --model Qwen/Qwen3-0.6B --versions-dir ./wsp-loop-out
+```
+
+Your app talks to the live model at `http://127.0.0.1:8900` (`POST /generate`). The loop keeps improving in the background; the model keeps using the updated weights. The user gets the benefit without doing anything.
+
+**The safety rules never change:** the eval gate (+5/−2), the 1% weight cap, and the 3B model cap apply to every run. Only gate-passing edits for your exact model are ever applied, and the original weights are always kept for instant rollback.
+
+---
+
 ## Honest limits — why you can trust this repo
 
 - The MIT work is a **blog post, not a peer-reviewed paper**, and has not yet been independently replicated.
@@ -183,7 +204,7 @@ wsp-kit by Aurem is a free, open-source engineering tool for small models. It tr
 Not yet. The pipeline test passed (failing 64.14 → 75.43, +11.29), but all four real-model runs (Qwen3-0.6B three times — run 1, run 2, and a clean re-run — plus GPT2-124M) failed the eval gate, so 0 weights shipped. The numbers are published in [REAL-RUNS.md](REAL-RUNS.md).
 
 **How do I try wsp-kit?**
-One command installs the skill and the kit, sets up the `wsp` command, and runs the demo automatically: `curl -fsSL https://raw.githubusercontent.com/AuremHQ/weight-space-programming/main/install.sh | bash`. Then `wsp auto` fixes your own model — it asks 4 simple questions and runs by itself.
+One command installs the skill and the kit, sets up the `wsp` command, and runs the demo automatically: `curl -fsSL https://raw.githubusercontent.com/AuremHQ/weight-space-programming/main/install.sh | bash`. Then `wsp auto` fixes your own model — it asks 4 simple questions and runs by itself. To keep improving in the background, run `wsp loop` and `wsp serve-model` — see "Keep it improving" above.
 
 **Is wsp-kit free?**
 Yes. Free for everyone, MIT licensed. A small model should not mean bad results.
@@ -200,6 +221,8 @@ Small open-weight models up to 3B parameters that you control. Closed API models
 
 - [x] Research summary + skill spec
 - [x] **Real runs live: Qwen3-0.6B + GPT2-124M, honest numbers, gate enforced** — see [REAL-RUNS.md](REAL-RUNS.md)
+- [x] Easy mode: install runs the demo, `wsp auto` asks 4 questions and runs by itself
+- [x] Continuous loop + live model: `wsp loop` keeps improving in the background, `wsp serve-model` applies new passing edits to the same running model — no reload, no swap
 - [ ] First passing weight edit on a real model
 - [ ] Demo video/GIF + example report
 - [ ] First community test: your model, your failure, your numbers
@@ -209,6 +232,7 @@ Small open-weight models up to 3B parameters that you control. Closed API models
 ## ⭐ Star & share
 
 - **Star** = you follow the next run. GitHub notifies you when new numbers land here.
+- **Your one star encourages our team to keep building incredible things — free for everyone — and to grow this community.** Stars are how a small free project proves people want it. If this kit helped you, or if you believe small models deserve the best results too, one click is the whole ask.
 - **Share** = someone with a looping small model finds a fix instead of paying for a full retraining run.
 - **Built by the team behind https://auremcto.com** — Ora by Aurem, an AI engineer for non-technical founders.
 
