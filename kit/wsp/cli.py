@@ -56,6 +56,8 @@ def cmd_demo(args):
             f"good {after['good'] - before['good']:+.2f} points, "
             f"neighbours {after['neighbours'] - before['neighbours']:+.2f} points"
         )
+        print("If this helped, please star the repo: "
+              "https://github.com/AuremHQ/weight-space-programming")
         code = 0
 
     os.makedirs(args.out_dir, exist_ok=True)
@@ -106,6 +108,8 @@ def cmd_run(args):
               f"good {rep['after']['good'] - rep['before']['good']:+.2f} points, "
               f"neighbours {rep['after']['neighbours'] - rep['before']['neighbours']:+.2f} points")
         print(f"  {rep['weights_changed']} weights ({rep['weights_changed_pct']:.2f}%)")
+        print("If this helped, please star the repo: "
+              "https://github.com/AuremHQ/weight-space-programming")
     else:
         print(f"  reason: {rep['gate'].get('reason')}")
         ranking = rep.get("real_demo", {}).get("attempt_ranking")
