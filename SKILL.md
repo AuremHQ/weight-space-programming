@@ -52,6 +52,20 @@ Before touching any weight, try the cheap fixes: a prompt change, a decoding or 
   5. This note: "Weight-space editing was demonstrated with GPT-6 Astra and is unproven for other models. This edit passed the eval gate below; verify independently before use."
   6. The edited weights as a separate artifact — never a silent overwrite of the original files.
 
+## Merge mode — separate from surgical editing (R6)
+
+Merging is a different mode from the surgical editing in Steps 0–3. Never mix them: a merge blends two whole models; a surgical edit removes one diagnosed direction from a few layers. The rules below are the merge rules; the surgical rules do not apply to merges, and the merge rules do not apply to surgical edits.
+
+- **Methods:** Task Arithmetic, TIES, DARE, SLERP, Model Soups (MergeKit-style tools). The kit ships linear averaging and SLERP first; the others are future work, not silent defaults.
+- **Same base required, enforced not assumed:** the two models must share the same architecture AND the same tokenizer — same `architectures`, same `model_type`, same `vocab_size`, same hidden/intermediate sizes and layer count, same tokenizer files. The kit checks this in code and refuses the merge on any mismatch. Never merge models from different bases and hope the shapes line up.
+- **NOT under the 1% weight cap:** a merge changes most weights by definition (it blends two whole models). The 1% cap is a surgical-edit rule and does not apply here — say so plainly in every merge report instead of pretending the merge was small.
+- **Own full eval gate:** the merged model is evaluated on your own eval file, at the serving temperature AND at greedy, against the first base model as the baseline. It ships only if the primary metric improves by at least 5 points AND no guard or neighbour metric regresses by more than 2 points — the same bar as the surgical gate. If the gate fails, discard the merge and ship nothing.
+- **Max model size still 3B.** The 3B cap applies to merges exactly as it applies to surgical edits.
+- **Never merge on a production branch, and never overwrite the originals.** The merged model goes to a new directory only, with a merge recipe (method, blend weight, base models) that reproduces it.
+- **Never invent evals for a merge.** A merge without your own eval file is refused, exactly as a surgical edit without one is.
+- **Merges need no editor model** — they are arithmetic on weights, not reasoning.
+- **Every merge report states:** the method and blend weight, the two base models, the same-base evidence, and the eval passes spent.
+
 ## Safety rules
 
 - Weight edits can bypass safety behaviour. That is why safety-removal requests are refused and why every edit goes through evaluation and human review.
