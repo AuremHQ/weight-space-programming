@@ -4,7 +4,9 @@
 failures.jsonl lines trigger gated runs; gate passes become new
 versions), and `wsp serve-model` serves one model and applies each
 new passing edit to it live — the same model, its old weights
-overridden in place, no reload, no swap.
+overridden in place, no reload, no swap, and `wsp merge` blends two
+same-base models (linear/SLERP), then runs the eval gate on the
+merged model.
 
 The demo prints every number it measures and writes two files into
 the output directory: report.json and kit_edited.npz. The edited
@@ -278,6 +280,61 @@ def cmd_apply_edit(args):
     return 0
 
 
+def cmd_merge(args):
+    """`wsp merge`: blend two same-base models, then gate the merge.
+
+    Linear or SLERP average of --model-a and --model-b (same base
+    required, enforced in code), saved to --out-dir, then the eval
+    gate runs on the merged model against model A as the baseline
+    (serving temperature AND greedy). Separate mode from surgical
+    editing; NOT under the 1% cap. Needs the real extra.
+    """
+    try:
+        from . import merge as merge_mod
+    except ImportError as exc:
+        print(exc)
+        return 2
+    try:
+        rep, out_dir, code = merge_mod.run_merge(
+            model_a=args.model_a,
+            model_b=args.model_b,
+            method=args.method,
+            t=args.t,
+            eval_path=args.eval,
+            out_dir=args.out_dir,
+            dtype=args.dtype,
+            samples_per_prompt=args.samples_per_prompt,
+            seed=args.seed,
+        )
+    except (FileNotFoundError, ValueError) as exc:
+        print(f"error: {exc}")
+        return 2
+    except ImportError as exc:
+        # Missing torch/transformers: print the hint, not a traceback.
+        print(exc)
+        return 2
+    print()
+    print(f"gate passed: {rep['gate']['passed']}")
+    before = rep["before"]
+    after = rep["after"]
+    print(f"  failing {after['failing'] - before['failing']:+.2f} points, "
+          f"good {after['good'] - before['good']:+.2f} points, "
+          f"neighbours {after['neighbours'] - before['neighbours']:+.2f} points")
+    if rep["gate"]["passed"]:
+        print("If this helped, please star the repo: "
+              "https://github.com/AuremHQ/weight-space-programming")
+    else:
+        for temp, g in rep["gate"]["by_temperature"].items():
+            if not g["passed"]:
+                print(f"  gate failed at temperature {temp}: "
+                      f"gain {g['primary_gain_points']:+.2f} points "
+                      f"(need {g['min_gain_points']}), "
+                      f"regressions {g['regressions_points']}")
+    print(f"wrote {out_dir}/report.json")
+    print(f"merged model in {out_dir}")
+    return code
+
+
 def cmd_version(_args):
     print(f"wsp-kit {__version__}")
     return 0
@@ -350,6 +407,35 @@ def main(argv=None):
     p_apply.add_argument("--out-dir", required=True,
                          help="where the edited model goes")
     p_apply.set_defaults(func=cmd_apply_edit)
+    p_merge = sub.add_parser(
+        "merge",
+        help="blend two same-base models (linear/SLERP), then run the "
+             "eval gate on the merged model")
+    p_merge.add_argument("--model-a", required=True,
+                         help="first base model: HuggingFace id or local "
+                              "directory (the gate baseline)")
+    p_merge.add_argument("--model-b", required=True,
+                         help="second base model: HuggingFace id or local "
+                              "directory (must share A's base + tokenizer)")
+    p_merge.add_argument("--method", default="linear",
+                         choices=["linear", "slerp"],
+                         help="blend method (default linear)")
+    p_merge.add_argument("--t", type=float, default=0.5,
+                         help="blend weight toward model B, in [0, 1] "
+                              "(default 0.5)")
+    p_merge.add_argument("--eval", required=True,
+                         help="eval file (JSON, format v1) with prompts + "
+                              "scorers")
+    p_merge.add_argument("--out-dir", default="wsp-merge-out",
+                         help="where the merged model, merge.json and "
+                              "report.json go")
+    p_merge.add_argument("--dtype", default="bfloat16",
+                         help="weight dtype to load (default bfloat16)")
+    p_merge.add_argument("--samples-per-prompt", type=int, default=1,
+                         help="samples at non-greedy temperatures (default 1)")
+    p_merge.add_argument("--seed", type=int, default=0,
+                         help="base sampling seed (default 0)")
+    p_merge.set_defaults(func=cmd_merge)
     p_watch = sub.add_parser(
         "watch",
         help="watch a directory for new eval files; run the gated "
