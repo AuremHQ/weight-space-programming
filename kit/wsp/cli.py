@@ -1,5 +1,10 @@
 """Command line: `wsp demo` runs the kit pipeline end to end, and
 `wsp auto` is easy mode — 4 questions, then the kit runs by itself.
+`wsp loop` keeps improving in the background (new eval files and
+failures.jsonl lines trigger gated runs; gate passes become new
+versions), and `wsp serve-model` serves one model and applies each
+new passing edit to it live — the same model, its old weights
+overridden in place, no reload, no swap.
 
 The demo prints every number it measures and writes two files into
 the output directory: report.json and kit_edited.npz. The edited
@@ -174,6 +179,59 @@ def cmd_watch(args):
         return 2
 
 
+def cmd_loop(args):
+    """`wsp loop`: keep improving in the background, forever.
+
+    Watches a directory for new eval files AND new lines in
+    failures.jsonl (one JSON object per line: prompt, expect, kind).
+    Each trigger runs the gated pipeline; a gate pass becomes a new
+    version in versions.json + latest.json. Nothing ships on a gate
+    fail, and the same failure is never retried. Stop with Ctrl+C.
+    """
+    try:
+        from . import loop
+        from . import real_runner  # preflight: fail fast without torch
+    except ImportError as exc:
+        print(exc)
+        return 2
+    try:
+        return loop.run_loop(
+            model_id=args.model,
+            watch_dir=args.watch_dir,
+            out_dir=args.out_dir,
+            interval=args.interval,
+            once=args.once,
+            pipeline_kwargs={
+                "dtype": args.dtype,
+                "samples_per_prompt": args.samples_per_prompt,
+                "seed": args.seed,
+                "top_columns": args.top_columns,
+                "max_attempts": args.max_attempts,
+            },
+        )
+    except ValueError as exc:
+        print(f"error: {exc}")
+        return 2
+
+
+def cmd_serve_model(args):
+    """`wsp serve-model`: serve one model, apply new passing edits to
+    it live. The same model object, its old weights overridden in
+    place — no reload, no restart, no swap. Rollback with
+    POST /rollback. Stop with Ctrl+C.
+    """
+    from . import serve_model
+
+    return serve_model.serve_model(
+        model_id=args.model,
+        versions_dir=args.versions_dir,
+        port=args.port,
+        interval=args.interval,
+        device=args.device,
+        dtype=args.dtype,
+    )
+
+
 def cmd_apply_edit(args):
     """`wsp apply-edit`: reproduce a recorded edit from original weights.
 
@@ -312,6 +370,47 @@ def main(argv=None):
     p_watch.add_argument("--top-columns", type=int, default=64)
     p_watch.add_argument("--max-attempts", type=int, default=3)
     p_watch.set_defaults(func=cmd_watch)
+    p_loop = sub.add_parser(
+        "loop",
+        help="keep improving in the background: new eval files and "
+             "new failures.jsonl lines trigger gated runs; gate passes "
+             "become new versions")
+    p_loop.add_argument("--model", required=True,
+                        help="HuggingFace model id to load per run")
+    p_loop.add_argument("--watch-dir", required=True,
+                        help="directory polled for new .json eval files "
+                             "and failures.jsonl")
+    p_loop.add_argument("--out-dir", default="wsp-loop-out",
+                        help="where each run's timestamped directory, "
+                             "versions.json and latest.json go")
+    p_loop.add_argument("--interval", type=int, default=60,
+                        help="poll interval in seconds (default 60)")
+    p_loop.add_argument("--once", action="store_true",
+                        help="process pending items once, then exit")
+    p_loop.add_argument("--dtype", default="bfloat16")
+    p_loop.add_argument("--samples-per-prompt", type=int, default=1)
+    p_loop.add_argument("--seed", type=int, default=0)
+    p_loop.add_argument("--top-columns", type=int, default=64)
+    p_loop.add_argument("--max-attempts", type=int, default=3)
+    p_loop.set_defaults(func=cmd_loop)
+    p_smodel = sub.add_parser(
+        "serve-model",
+        help="serve one model and apply new passing edits to it live "
+             "(same model, weights overridden in place)")
+    p_smodel.add_argument("--model", required=True,
+                          help="HuggingFace model id to load once")
+    p_smodel.add_argument("--versions-dir", required=True,
+                          help="the loop output directory watched for "
+                               "latest.json")
+    p_smodel.add_argument("--port", type=int, default=8900,
+                          help="localhost port (default 8900)")
+    p_smodel.add_argument("--interval", type=int, default=30,
+                          help="poll interval in seconds for new passing "
+                               "edits (default 30)")
+    p_smodel.add_argument("--device", default="cpu",
+                          help="torch device (default cpu)")
+    p_smodel.add_argument("--dtype", default="bfloat16")
+    p_smodel.set_defaults(func=cmd_serve_model)
     p_ver = sub.add_parser("version", help="print the kit version")
     p_ver.set_defaults(func=cmd_version)
     p_status = sub.add_parser(
