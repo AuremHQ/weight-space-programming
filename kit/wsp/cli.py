@@ -1,4 +1,5 @@
-"""Command line: `wsp demo` runs the kit pipeline end to end.
+"""Command line: `wsp demo` runs the kit pipeline end to end, and
+`wsp auto` is easy mode — 4 questions, then the kit runs by itself.
 
 The demo prints every number it measures and writes two files into
 the output directory: report.json and kit_edited.npz. The edited
@@ -123,6 +124,24 @@ def cmd_run(args):
                 print(f"  suggestion: {s}")
     print(f"wrote {out_dir}/report.json")
     return code
+
+
+def cmd_auto(args):
+    """`wsp auto`: easy mode — 4 questions, then the kit runs by itself.
+
+    Answers in plain words; the kit builds the eval file, runs the
+    gated pipeline, and shows the result. Nothing is invented: every
+    prompt comes from the user's answers. With --eval, the questions
+    are skipped and that eval file is used instead.
+    """
+    from . import auto
+
+    return auto.run_auto(
+        model_id=args.model,
+        eval_path=args.eval,
+        out_dir=args.out_dir,
+        serve=args.serve,
+    )
 
 
 def cmd_watch(args):
@@ -250,6 +269,19 @@ def main(argv=None):
     p_run.add_argument("--max-attempts", type=int, default=3,
                        help="edit attempts, max 3 per the skill (default 3)")
     p_run.set_defaults(func=cmd_run)
+    p_auto = sub.add_parser(
+        "auto", help="easy mode: 4 questions, then the kit runs by itself")
+    p_auto.add_argument("--model",
+                        help="HuggingFace model id, e.g. Qwen/Qwen3-0.6B "
+                             "(asked if omitted)")
+    p_auto.add_argument("--eval",
+                        help="use this eval file instead of asking "
+                             "the questions")
+    p_auto.add_argument("--out-dir", default="wsp-auto-out",
+                        help="where the eval file and report.json go")
+    p_auto.add_argument("--serve", action="store_true",
+                        help="start the status page after the run")
+    p_auto.set_defaults(func=cmd_auto)
     p_apply = sub.add_parser(
         "apply-edit",
         help="reproduce a recorded edit from original weights")
