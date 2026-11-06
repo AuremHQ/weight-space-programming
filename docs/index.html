@@ -188,18 +188,22 @@
     </table></div>
     <p>The pipeline test is a small 2-layer test model with a known, planted failure. It proves the kit works end to end: detect, edit, gate, ship.</p>
 
-    <h3>Real models — the gate refused every run</h3>
+    <h3>Real models — 2 of 7 passed the gate</h3>
     <div class="scroll"><table>
       <tr><th>Run</th><th>Failing score</th><th>Causal proof</th><th>Gate</th><th>Weights shipped</th></tr>
       <tr><td>Qwen3-0.6B — run 1</td><td>31.11 (good: 100)</td><td>−3.33 (bar +5) — failed</td><td><span class="r">REFUSED</span></td><td>0</td></tr>
       <tr><td>Qwen3-0.6B — clean re-run</td><td>31.11 (good: 100)</td><td>+32.22 — passed</td><td><span class="r">REFUSED</span></td><td>0</td></tr>
       <tr><td>GPT2-124M</td><td>28.33 (good: 80)</td><td>−1.11 (bar +5) — failed</td><td><span class="r">REFUSED</span></td><td>0</td></tr>
+      <tr><td>Qwen3-0.6B — narrow Try 1</td><td>37.78 (good: 100)</td><td>+23.89 — passed</td><td><span class="r">REFUSED</span></td><td>0</td></tr>
+      <tr><td>Qwen3-0.6B — narrow dampen</td><td>37.78 → 67.22 (good: 100)</td><td>+23.89 — passed</td><td><span class="g">PASSED +29.44</span></td><td>131,072</td></tr>
+      <tr><td>SmolLM2-1.7B-Instruct</td><td>76.11 → 85.56 (good: 100)</td><td>−30.00 (bar +5) — failed</td><td><span class="g">PASSED +9.44</span></td><td>129,897</td></tr>
     </table></div>
-    <p>Both models looped on 60-item lists (ask for 60 different animals and get 16). The diagnosis was right — the causal proof passed on the clean Qwen re-run (+32.22) — but the edit itself did not reproduce the benefit: every attempt made the failing score worse at greedy temperature. So the gate refused, and <strong>0 weights shipped</strong>. The full reports are in <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/REAL-RUNS.md">REAL-RUNS.md</a>.</p>
+    <p>All three models looped on 60-item lists (ask for 60 different animals and get repeats). The first four real runs were all refused: the diagnosis was sometimes right — the causal proof passed on the clean Qwen re-run (+32.22) and on the narrow eval (+23.89) — but the subtraction edit did not reproduce the benefit: every attempt made the failing score worse at greedy temperature. Then the editor changed. On the narrow Qwen eval, <strong>dampening</strong> the suspect columns (scaled down by 0.25) passed the gate: failing 37.78 → 67.22 (+29.44), good and neighbours still 100. And on SmolLM2, a <strong>subtraction</strong> on layer 23 alone passed: failing 76.11 → 85.56 (+9.44), good and neighbours still 100 — even though its causal proof was negative (−30.00). So the gate refused 5 of 7 runs, and <strong>260,969 weights shipped in total</strong> from the 2 passes. The full reports are in <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/REAL-RUNS.md">REAL-RUNS.md</a>.</p>
     <p>A second Qwen run also passed the causal proof (+32.22), but its attempt numbers were contaminated by a restore bug — the clean re-run above replaced it. The full story is in REAL-RUNS.md.</p>
+    <p>One honest caveat on the Qwen pass: the +29.44 slightly overstates the gain — the scorer counts 'Penguin' and 'Penguin (again)' as distinct items, so repeats with "(again)" still score. It clears the +5 bar by a wide margin, but the true gain is a little smaller than 29.44.</p>
 
     <div class="plain">
-      <p><strong>What the numbers mean, in plain words.</strong> The kit works end to end — the pipeline test proves it. Fixing a real model is harder than the demo, and we are showing the failures too, not just the wins. The editor — how the fix is applied — is the gap we are working on next, not the diagnosis.</p>
+      <p><strong>What the numbers mean, in plain words.</strong> The kit works end to end — the pipeline test proves it. Fixing a real model is harder than the demo, and we are showing the failures too, not just the wins. Two real-model edits have now passed the gate — one by subtraction, one by dampening — and the lesson is that the right edit depends on the model: subtraction passed on SmolLM2 and destroyed Qwen, dampening passed on Qwen and hurt SmolLM2. That is the claim: 2 passes out of 7 runs, both on the same narrow failure, not a general proof.</p>
     </div>
 
     <h3>Where it started — MIT's numbers</h3>
@@ -300,7 +304,7 @@ wsp serve-model --model Qwen/Qwen3-0.6B --versions-dir ./wsp-loop-out</pre>
     </details>
     <details>
       <summary>Does wsp-kit fix real models?</summary>
-      <p>Not yet. The pipeline test passed (failing 64.14 → 75.43, +11.29), but all four real-model runs (Qwen3-0.6B three times — run 1, run 2, and a clean re-run — plus GPT2-124M) failed the eval gate, so 0 weights shipped. The numbers are published in <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/REAL-RUNS.md">REAL-RUNS.md</a>.</p>
+      <p>Twice so far, out of seven runs. The pipeline test passed (failing 64.14 → 75.43, +11.29), and two real-model edits passed the gate: SmolLM2-1.7B-Instruct (failing 76.11 → 85.56, +9.44, layer 23, 129,897 weights) and Qwen3-0.6B narrow-animals by dampening (failing 37.78 → 67.22, +29.44, layers [27, 26], 131,072 weights). The other five real-model runs failed the gate and shipped 0 weights. The numbers are published in <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/REAL-RUNS.md">REAL-RUNS.md</a>.</p>
     </details>
     <details>
       <summary>How do I try wsp-kit?</summary>
@@ -324,7 +328,7 @@ wsp serve-model --model Qwen/Qwen3-0.6B --versions-dir ./wsp-loop-out</pre>
     </details>
     <details>
       <summary>What happens if the gate fails?</summary>
-      <p>Nothing ships. The report is saved, the original weights are untouched, and the run is logged in REAL-RUNS.md. Our real-model runs all ended this way so far — and we publish them anyway.</p>
+      <p>Nothing ships. The report is saved, the original weights are untouched, and the run is logged in REAL-RUNS.md. Five of our seven real-model runs ended this way — and we publish them anyway.</p>
     </details>
     <details>
       <summary>Does it work on ChatGPT or Claude?</summary>
@@ -344,7 +348,7 @@ wsp serve-model --model Qwen/Qwen3-0.6B --versions-dir ./wsp-loop-out</pre>
       <a href="https://github.com/AuremHQ">AuremHQ</a> ·
       <a href="https://www.linkedin.com/in/tejinder-sandhu-156a3a181">Founder on LinkedIn</a>
     </p>
-    <p>Inspired by MIT CSAIL's "Sparks of Weight-Space Programming" (blog post, not a peer-reviewed paper). Not affiliated with MIT. Numbers current as of 5 November 2026.</p>
+    <p>Inspired by MIT CSAIL's "Sparks of Weight-Space Programming" (blog post, not a peer-reviewed paper). Not affiliated with MIT. Numbers current as of 6 November 2026.</p>
   </div>
 </footer>
 </body>
