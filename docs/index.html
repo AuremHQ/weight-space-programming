@@ -225,14 +225,20 @@
   </section>
 
   <section id="try">
-    <h2>Try it</h2>
-    <p>One command installs the skill. It downloads only <code>SKILL.md</code>, backs up any existing copy, and never runs code or asks for sudo.</p>
+    <h2>Try it — easy mode</h2>
+    <p>One command installs the skill and the kit, sets up the <code>wsp</code> command, and runs the demo automatically — so you see a result in seconds, with nothing to configure.</p>
     <pre>curl -fsSL https://raw.githubusercontent.com/AuremHQ/weight-space-programming/main/install.sh | bash</pre>
+    <p>After install, the demo has already run and shown its result. Then one command fixes your own model — it asks 4 simple questions (which model, what goes wrong, what goes right, what should not change), builds the test file, runs the pipeline, and shows the result:</p>
+    <pre>wsp auto</pre>
+    <p>See the result on the status page:</p>
+    <pre>wsp serve</pre>
     <p>If the kit helped, please <a href="https://github.com/AuremHQ/weight-space-programming">star the repo</a> — it helps others find it.</p>
     <h3>Commands</h3>
     <ul>
+      <li><code>wsp auto</code> — easy mode: 4 questions, then the kit runs by itself.</li>
       <li><code>wsp demo</code> — run the pipeline test end to end.</li>
       <li><code>wsp run</code> — run the full gated pipeline on your own small model.</li>
+      <li><code>wsp watch</code> — keep watching a folder; every new eval file runs automatically.</li>
       <li><code>wsp status</code> — show only gate-passing runs (wins only).</li>
       <li><code>wsp serve</code> — a live status page on your machine (default port 8899).</li>
     </ul>
