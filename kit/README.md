@@ -175,6 +175,39 @@ live or production model — producing the edited file plus report is
 the kit's job; applying it is always your deliberate step, with
 `wsp apply-edit --model <id> --edit <edit.json> --out-dir <dir>`.
 
+**Loop mode — keep improving in the background.** `wsp loop` is
+watch mode, plus failures: it also reads `failures.jsonl` in the
+watch directory (one JSON object per line: `{"prompt": "...",
+"expect": "...", "kind": "failing"}` — kind is failing, good or
+neighbour). Every new failure line builds an eval from ALL the
+failures seen so far and runs the gated pipeline. A gate pass becomes
+a new version in `versions.json` + `latest.json`; a gate fail ships
+nothing, and the same failure is never retried:
+
+```
+wsp loop --model Qwen/Qwen3-0.6B --watch-dir ./evals-incoming --out-dir ./wsp-loop-out
+```
+
+**Live model — the same model, weights overridden in place.**
+`wsp serve-model` loads the model ONCE and serves it on
+http://127.0.0.1:8900 (`POST /generate`). It watches the loop's
+output directory, and whenever a new gate-passing edit appears it
+applies the edit to the LIVE loaded model — the old weights are
+overridden by the updated ones, in the same model, with no reload,
+no restart, and no swap. The next prompt automatically uses the
+updated weights. `POST /rollback` undoes the last applied edit
+exactly, and `GET /status` shows the current version. Only
+gate-passing edits for this exact model are ever applied, and the 1%
+cap is checked again at apply time:
+
+```
+wsp serve-model --model Qwen/Qwen3-0.6B --versions-dir ./wsp-loop-out
+```
+
+Run `wsp loop` and `wsp serve-model` together: the loop keeps
+improving in the background, and the live model keeps using the
+updated weights — the user gets the benefit without doing anything.
+
 **Scope boundary.** The runner supports open-weight models only,
 up to 3 billion parameters, loaded through HuggingFace Auto classes
 with MLP layers discovered generically (Qwen, Llama, Gemma, Mistral
@@ -326,7 +359,9 @@ kit/
     evalfile.py    eval format v1 (failing / good / neighbours)
     scoring.py     scorers: distinct, contains, loop, finish, sequence
     watch.py       opt-in watch mode (wsp watch)
-    cli.py         `wsp demo`, `wsp run`, `wsp watch`, `wsp apply-edit`, `wsp status`, `wsp serve`, `wsp version`
+    loop.py        continuous mode (wsp loop): eval files + failures.jsonl → versions
+    serve_model.py live model server (wsp serve-model): new passing edits override weights in place
+    cli.py         `wsp demo`, `wsp run`, `wsp auto`, `wsp watch`, `wsp loop`, `wsp serve-model`, `wsp apply-edit`, `wsp status`, `wsp serve`, `wsp version`
     mcp_server.py  MCP tools
     status.py      `wsp status` — green-only status (gate-passing runs only)
     serve.py       `wsp serve` — local status page (default port 8899)
