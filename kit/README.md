@@ -11,6 +11,28 @@ weights and fixed a reasoning loop. This kit is an independent
 implementation of that idea, built to the rules in the repo's
 [SKILL.md](../SKILL.md). It is not affiliated with MIT.
 
+## Easy mode — install, then it runs by itself
+
+One command installs the skill and the kit, sets up the `wsp`
+command, and runs the demo automatically — so you see a result in
+seconds, with nothing to configure:
+
+```
+curl -fsSL https://raw.githubusercontent.com/AuremHQ/weight-space-programming/main/install.sh | bash
+```
+
+Then fix your own model with one command:
+
+```
+wsp auto
+```
+
+It asks 4 simple questions (which model, what goes wrong, what goes
+right, what should not change), builds the test file, runs the gated
+pipeline, and shows the result. Nothing runs on a model you did not
+point it at, and no edit ever overwrites your original model. See the
+result on the status page with `wsp serve`.
+
 ## Install
 
 Requires Python 3.9+ and numpy. From a clone of this repo:
