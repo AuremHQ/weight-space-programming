@@ -232,6 +232,9 @@
     <pre>wsp auto</pre>
     <p>See the result on the status page:</p>
     <pre>wsp serve</pre>
+    <p>Keep it improving in the background, and serve the same model with its weights updated live — no reload, no swap:</p>
+    <pre>wsp loop --model Qwen/Qwen3-0.6B --watch-dir ./evals-incoming --out-dir ./wsp-loop-out
+wsp serve-model --model Qwen/Qwen3-0.6B --versions-dir ./wsp-loop-out</pre>
     <p>If the kit helped, please <a href="https://github.com/AuremHQ/weight-space-programming">star the repo</a> — it helps others find it.</p>
     <h3>Commands</h3>
     <ul>
@@ -239,6 +242,8 @@
       <li><code>wsp demo</code> — run the pipeline test end to end.</li>
       <li><code>wsp run</code> — run the full gated pipeline on your own small model.</li>
       <li><code>wsp watch</code> — keep watching a folder; every new eval file runs automatically.</li>
+      <li><code>wsp loop</code> — keep improving in the background; new failures become new versions.</li>
+      <li><code>wsp serve-model</code> — serve one model; new passing edits override its weights live, same model, no swap.</li>
       <li><code>wsp status</code> — show only gate-passing runs (wins only).</li>
       <li><code>wsp serve</code> — a live status page on your machine (default port 8899).</li>
     </ul>
