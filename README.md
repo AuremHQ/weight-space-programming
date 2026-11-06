@@ -30,7 +30,7 @@
 
 ## Real runs — our numbers (not MIT's)
 
-We ran the kit on **real models** — Qwen3-0.6B and GPT2-124M, local CPU, no LLM editor. Here is what actually happened. Full numbers: [REAL-RUNS.md](REAL-RUNS.md).
+We ran the kit on **real models** — Qwen3-0.6B, GPT2-124M, and SmolLM2-1.7B-Instruct, local CPU, no LLM editor. **7 real runs, 2 gate passes.** Here is what actually happened. Full numbers: [REAL-RUNS.md](REAL-RUNS.md).
 
 | Run | Model | Failure | Diagnosis | Causal proof | Weights changed | Gate |
 |---|---|---|---|---|---|---|
@@ -39,9 +39,12 @@ We ran the kit on **real models** — Qwen3-0.6B and GPT2-124M, local CPU, no LL
 | **Qwen run 2** | Qwen3-0.6B | Same failure | Layers [27, 26] | **+32.22 — PASSED** | **0** | **FAILED — nothing shipped** (attempt numbers contaminated by a restore bug — see clean re-run) |
 | **Qwen clean re-run** | Qwen3-0.6B | Same failure, restore bug fixed | Layers [27, 26] | **+32.22 — PASSED** | **0** | **FAILED — nothing shipped** (all 3 clean attempts made failing worse: −11.11 / −11.11 / −12.22) |
 | **GPT-2 run** | GPT2-124M | 60-item lists loop (animals 1.7, countries 5.0, fruits 1.7) | Layers [10, 11] | −1.11 — FAILED | **0** | **FAILED — nothing shipped** |
+| **Qwen narrow Try 1** | Qwen3-0.6B | 60-item lists loop, narrow eval | Layers [27, 26] | **+23.89 — PASSED** | **0** | **FAILED — nothing shipped** (all 3 subtraction attempts destroyed the model at greedy) |
+| **Qwen narrow dampen** | Qwen3-0.6B | Same failure, narrow eval | Layers [27, 26] | **+23.89 — PASSED** | **131,072 (0.022%)** | **PASSED — failing 37.78 → 67.22 (+29.44)** |
+| **SmolLM2 run** | SmolLM2-1.7B-Instruct | 60-item lists loop (Butterfly ×2, Elephant ×2, Giraffe ×3) | Layer 23 | −30.00 — FAILED | **129,897 (0.0076%)** | **PASSED — failing 76.11 → 85.56 (+9.44)** |
 
-**What this proves:** the kit runs end-to-end on real models, finds real failures, diagnoses real layers — and **the gate works**: when the proof fails, nothing ships.
-**What it does not prove yet:** a passing weight edit on a real model. That is the next milestone, not a claim.
+**What this proves:** the kit runs end-to-end on real models, finds real failures, diagnoses real layers — and **the gate works**: 5 of 7 runs were refused, and **2 real-model edits passed the gate** (SmolLM2 by subtraction, Qwen narrow by dampening).
+**What it does not prove yet:** that the kit fixes real models in general. 2 passes out of 7 runs, both on the same narrow failure (60-item list looping) — that is the claim, not a general proof.
 
 ---
 
@@ -191,7 +194,7 @@ Your app talks to the live model at `http://127.0.0.1:8900` (`POST /generate`). 
 - The MIT work is a **blog post, not a peer-reviewed paper**, and has not yet been independently replicated.
 - Demonstrated so far mainly with **one editor model (GPT-6 Astra)**. Whether other models do this equally well is **unproven** — our reports name the editor behind every run (ours is a numerical estimator, no LLM).
 - This is a **batch job, not real-time**: load weights, run evaluations, reason, edit, re-evaluate. It never runs live inside a chat reply.
-- **No real-model edit has passed the gate yet.** The pipeline test passed; Qwen run 1, Qwen run 2, the Qwen clean re-run, and the GPT-2 run all ended with the gate refusing and nothing shipping. That is published above, not hidden.
+- **Two real-model edits have passed the gate** (SmolLM2 +9.44, Qwen narrow +29.44) — and five runs ended with the gate refusing and nothing shipping. That is published above, not hidden.
 
 ---
 
@@ -201,7 +204,7 @@ Your app talks to the live model at `http://127.0.0.1:8900` (`POST /generate`). 
 wsp-kit by Aurem is a free, open-source engineering tool for small models. It tries to fix one specific, repeatable failure in a small open-weight model by editing its weights directly — no retraining, no fine-tuning, no gradients.
 
 **Does wsp-kit fix real models?**
-Not yet. The pipeline test passed (failing 64.14 → 75.43, +11.29), but all four real-model runs (Qwen3-0.6B three times — run 1, run 2, and a clean re-run — plus GPT2-124M) failed the eval gate, so 0 weights shipped. The numbers are published in [REAL-RUNS.md](REAL-RUNS.md).
+Twice so far, out of seven runs. The pipeline test passed (failing 64.14 → 75.43, +11.29), and two real-model edits passed the gate: SmolLM2-1.7B-Instruct (failing 76.11 → 85.56, +9.44, layer 23, 129,897 weights) and Qwen3-0.6B narrow-animals by dampening (failing 37.78 → 67.22, +29.44, layers [27, 26], 131,072 weights). The other five real-model runs failed the gate and shipped 0 weights. The numbers are published in [REAL-RUNS.md](REAL-RUNS.md).
 
 **How do I try wsp-kit?**
 One command installs the skill and the kit, sets up the `wsp` command, and runs the demo automatically: `curl -fsSL https://raw.githubusercontent.com/AuremHQ/weight-space-programming/main/install.sh | bash`. Then `wsp auto` fixes your own model — it asks 4 simple questions and runs by itself. To keep improving in the background, run `wsp loop` and `wsp serve-model` — see "Keep it improving" above.
@@ -223,7 +226,7 @@ Small open-weight models up to 3B parameters that you control. Closed API models
 - [x] **Real runs live: Qwen3-0.6B + GPT2-124M, honest numbers, gate enforced** — see [REAL-RUNS.md](REAL-RUNS.md)
 - [x] Easy mode: install runs the demo, `wsp auto` asks 4 questions and runs by itself
 - [x] Continuous loop + live model: `wsp loop` keeps improving in the background, `wsp serve-model` applies new passing edits to the same running model — no reload, no swap
-- [ ] First passing weight edit on a real model
+- [x] First passing weight edit on a real model — **two passes: SmolLM2 (+9.44) and Qwen narrow (+29.44)** — see [REAL-RUNS.md](REAL-RUNS.md)
 - [ ] Demo video/GIF + example report
 - [ ] First community test: your model, your failure, your numbers
 

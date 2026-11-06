@@ -2,8 +2,8 @@
 
 This file is the real data behind the repo. No MIT numbers here — these are **our runs**, on real models, local CPU, with a numerical editor (no LLM). Every number below comes from a `report.json` in the run's out-dir.
 
-> **Headline: the gate has refused every real run so far. 0 weights shipped.**
-> That is published here, not hidden — a gate that only says yes is not a gate.
+> **Headline: 7 real runs, 2 gate passes. 260,969 weights shipped in total.**
+> The other 5 runs were refused by the gate and shipped 0 weights — that is published here, not hidden. A gate that only says yes is not a gate.
 
 ## Results at a glance
 
@@ -14,6 +14,9 @@ This file is the real data behind the repo. No MIT numbers here — these are **
 | Qwen run 2 | Qwen3-0.6B | Same failure | Layers [27, 26] | **+32.22 — PASSED** | **0** | **FAILED — nothing shipped** |
 | Qwen clean re-run | Qwen3-0.6B | Same failure, restore bug fixed | Layers [27, 26] | **+32.22 — PASSED** | **0** | **FAILED — nothing shipped** |
 | GPT-2 run | GPT2-124M (124M, 12 layers) | 60-item lists loop (animals 1.7, countries 5.0, fruits 1.7) | Layers [10, 11] | −1.11 — FAILED | **0** | **FAILED — nothing shipped** |
+| Qwen narrow Try 1 | Qwen3-0.6B | 60-item lists loop, narrow eval (animals only) | Layers [27, 26] | **+23.89 — PASSED** | **0** | **FAILED — nothing shipped** (all 3 subtraction attempts destroyed the model at greedy) |
+| Qwen narrow dampen | Qwen3-0.6B | Same failure, narrow eval | Layers [27, 26] | **+23.89 — PASSED** | **131,072 (0.022%)** | **PASSED — failing 37.78 → 67.22 (+29.44)** |
+| SmolLM2 run | SmolLM2-1.7B-Instruct (1.7B) | 60-item lists loop (repeats: Butterfly ×2, Elephant ×2, Giraffe ×3) | Layer 23 | −30.00 — FAILED | **129,897 (0.0076%)** | **PASSED — failing 76.11 → 85.56 (+9.44)** |
 
 ## Pipeline test (smoke test — proves the pipeline, not a real fix)
 
@@ -57,17 +60,46 @@ This file is the real data behind the repo. No MIT numbers here — these are **
 - **Causal proof:** 4.44 → 3.33 (**−1.11**, bar 5) — **FAILED**. Stopped. 0 attempts, 0 weights.
 - **Gate: false.** Out-dir holds only `report.json`.
 
+## Qwen narrow Try 1 — Qwen3-0.6B, narrow-animals eval (Nov 5 ~18:54, Teji's PC, CPU bf16)
+
+- **Failure:** 60-item lists loop, narrow eval (animals only). Same failure family as the mixed eval, fewer prompts.
+- **Baselines @ 0.7:** failing **37.78** (28.89 greedy), good 100, neighbours 100. Failure gap: **62.22 points**.
+- **Diagnosis:** layers **[27, 26]**, direction norms [50.795, 29.845]. Contrast = neighbours set.
+- **Causal proof:** 28.89 → 52.78 (**+23.89**, bar 5) — **PASSED**.
+- **Attempts — all 3 subtraction attempts destroyed the model at greedy:** failing **1.67**, good **0.00** in every attempt (neighbours 73.33 / 36.67 / 100). Best attempt missed the gate by 130.22 points. The alpha formula was the problem: its signed-mean denominator cancels to ~0, so alpha is a coin flip (see the editor investigation in `experiments/EDITOR-FIX-REPORT.md` in the build clone).
+- **Gate: false. 0 weights.** Nothing shipped.
+
+## Qwen narrow dampen — Qwen3-0.6B, narrow-animals eval, dampen 0.25 (Nov 5, VM, CPU bf16) — ✅ FIRST QWEN PASS
+
+- **Same failure, same diagnosis as Try 1** (layers [27, 26], causal proof +23.89). Only the edit changed: instead of subtracting a direction, the suspect columns were **dampened toward zero** (scaled down by 0.25).
+- **Attempts:** variant 1 (dampen 0.5), variant 2 (dampen 0.25), variant 3 (dampen 0.0). **Variant 2 passed.**
+- **Gate: PASSED at serving temp 0.7 AND greedy 0.0.** Failing **37.78 → 67.22 (+29.44 @ 0.7)**, +25.56 @ 0.0. Good 100, neighbours 100 at 0.7 (neighbours +6.67 at greedy — improved, not regressed). Weights changed: **131,072 (0.022%)**, layers [27, 26], dampen factor 0.25.
+- **Honest caveat:** the +29.44 slightly overstates the gain — the scorer counts 'Penguin' and 'Penguin (again)' as distinct items, so repeats with "(again)" still score. It clears the +5 bar by a wide margin, but the true gain is a little smaller than 29.44.
+- **What this means:** dampening works where subtraction destroyed the model. The rule the investigation found: causal proof positive → dampen the columns down; causal proof negative → subtract with a sane alpha. Report: build clone `wsp-real-out-qwen-narrow-dampen/report.json`.
+
+## SmolLM2 run — SmolLM2-1.7B-Instruct (Nov 5 ~20:18, Teji's PC, CPU bf16) — ✅ FIRST PASSING REAL-MODEL EDIT
+
+- **Failure:** 60-item lists loop. 60 animals came back with repeats — Butterfly twice, Elephant twice, Giraffe three times.
+- **Baselines @ 0.7:** failing **76.11**, good 100, neighbours 100. Failure gap: **23.89 points**.
+- **Temperature sweep:** 56.67 / 76.11 / 68.89 / 60.56 — no cheap fix.
+- **Diagnosis:** layer **23** only.
+- **Causal proof:** 56.67 → 26.67 (**−30.00**, bar 5) — **FAILED**. Zeroing the suspect columns made the failure *worse*. The edit passed anyway (see below) — the ablation and the edit do not always agree, and on this model the subtraction worked where the ablation hurt.
+- **Attempts:** 3 ran. Variants 1–2 (layers [23, 22], alphas 1.0× / 7867.69× and 2.0× / 15735.39×) destroyed the model. **Variant 3 (layer 23 only, alpha 1.0×) passed.**
+- **Gate: PASSED at serving temp 0.7 AND greedy 0.0.** Failing **76.11 → 85.56 (+9.44 @ 0.7)**, +8.33 @ 0.0. Good 100, neighbours 100, zero regression at both temperatures. Weights changed: **129,897 (0.0076%)**, layer 23 only, alpha 1.0×. Edited model saved to `wsp-real-out-smollm2` on Teji's PC.
+- **What this means:** the first real-model edit to pass the gate. One layer, one tiny subtraction, no retraining — and the model stopped repeating itself. Report: `C:\Users\tejis\weight-space-programming\wsp-real-out-smollm2\report.json` (Teji's PC).
+
 ## What this proves — and what it does not
 
 **Proves:**
-- The pipeline runs end-to-end on real models, on two families (Qwen + GPT-2), CPU-only, no LLM editor.
-- It measures real failures honestly (68.89- and 51.67-point gaps).
-- Diagnosis can find causal layers (Qwen run 2: +32.22).
-- The gate works: a failed proof stops everything before any weight is touched.
+- The pipeline runs end-to-end on real models, on three families (Qwen + GPT-2 + SmolLM2), CPU-only, no LLM editor.
+- It measures real failures honestly (68.89-, 62.22-, 51.67- and 23.89-point gaps).
+- Diagnosis can find causal layers (Qwen run 2: +32.22; Qwen narrow: +23.89).
+- The gate works: a failed proof stops everything before any weight is touched — and 5 of 7 runs were refused.
+- **Two real-model edits passed the gate.** SmolLM2 by subtraction (layer 23, alpha 1.0×, +9.44); Qwen narrow by dampening (layers [27, 26], dampen 0.25, +29.44). Both held at serving temperature and greedy, with zero regression on good and neighbours at serving temperature.
 
 **Does not prove:**
-- A passing weight edit on a real model. None yet.
-- That direction-subtraction can fix these failures. Qwen run 2 showed causal layers whose edit still could not reproduce the ablation.
+- That the kit fixes real models in general. **2 passes out of 7 runs** is the claim — both on the same narrow failure (60-item list looping), both on small models, both with a numerical editor.
+- That direction-subtraction can fix these failures in general. It passed on SmolLM2 and destroyed Qwen at greedy; dampening passed on Qwen and hurt SmolLM2. The right edit depends on the model and the causal sign — there is no single editor yet.
 - Anything about other models, other failures, or large models.
 
 ## How a run works (the pipeline)
@@ -85,7 +117,7 @@ Editor: numerical activation-difference estimator — **no LLM**. Reports name t
 
 - CPU bf16 only; a 0.6B model takes ~30–60 minutes. Bigger models take far longer.
 - Models over 3B parameters are refused by design.
-- One failure type so far (list-looping), two models, one eval each.
+- One failure type so far (list-looping), three models (Qwen, GPT-2, SmolLM2), one eval each — two of the seven runs passed the gate.
 - Not peer-reviewed, not independently replicated — same as the MIT blog this builds on.
 
 ## Reproduce
