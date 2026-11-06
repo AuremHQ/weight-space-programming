@@ -136,8 +136,10 @@
   <div class="hero">
     <h1>wsp-kit <b>by Aurem</b></h1>
     <p class="tagline">An engineering tool for small models.</p>
-    <p class="hook">We tried to fix a real model without retraining — and <b>the eval gate said NO five times, and YES twice.</b><br> We didn't train it. We edited it. (260,969 weights)<br>
+    <p class="hook">We tried to fix a real model without retraining — the gate said <b>NO five times, and YES twice.</b><br>
     That honesty is the product. Small model. Best results. Free for everyone.</p>
+    <p class="hook">We didn't train it. We edited it. <b>260,969 weights changed</b> across our two passing edits — no gradients, no retraining.<br>
+    (131,072 on Qwen3-0.6B, 129,897 on SmolLM2-1.7B.)</p>
     <div class="proof">
       <span class="chip"><span class="g">✓ KIT TEST — PASSED</span> &nbsp;+11.29 &nbsp;(64.14 → 75.43)</span>
       <span class="chip gold">FREE • OPEN SOURCE • MIT</span>
@@ -204,6 +206,10 @@
 
     <div class="plain">
       <p><strong>What the numbers mean, in plain words.</strong> The kit works end to end — the pipeline test proves it. Fixing a real model is harder than the demo, and we are showing the failures too, not just the wins. Two real-model edits have now passed the gate — one by subtraction, one by dampening — and the lesson is that the right edit depends on the model: subtraction passed on SmolLM2 and destroyed Qwen, dampening passed on Qwen and hurt SmolLM2. That is the claim: 2 passes out of 7 runs, both on the same narrow failure, not a general proof.</p>
+    </div>
+
+    <div class="plain">
+      <p><strong>What it CAN'T do.</strong> Editing removes an obstacle — it cannot add knowledge or an ability that was never there. If the failure is a missing ability rather than a blocked one, the kit refuses. MIT's Gemma 3 270M control model could not be improved at all. And our own gate refused 5 of our 7 real-model runs — those edits shipped nothing.</p>
     </div>
 
     <h3>Where it started — MIT's numbers</h3>
