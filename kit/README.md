@@ -400,9 +400,9 @@ old one, never as a silent replacement.
 - Weight edits can bypass safety behaviour. That is why safety-removal
   requests are refused and every edit goes through evaluation and
   human review.
-- Real runs are live (Qwen + GPT-2, see the repo's REAL-RUNS.md) —
-  but no real-model edit has passed the gate yet. A passing
-  real-model edit is still the next milestone.
+- Real runs are live (Qwen + GPT-2 + SmolLM2, see the repo's REAL-RUNS.md) —
+  7 real runs, 2 gate passes (SmolLM2 +9.44, Qwen narrow +29.44). The
+  other 5 runs were refused by the gate and shipped 0 weights.
 
 ## License
 
