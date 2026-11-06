@@ -2,6 +2,14 @@
 
 ![wsp-kit — real runs](assets/wsp-kit-banner.png)
 
+## Problem → Edit → Result — our real runs
+
+- **Problem:** Qwen3-0.6B and SmolLM2-1.7B looped on 60-item lists — asking for 60 different animals gave repeats.
+- **Edit:** a tiny weight change — 131,072 weights (0.022%) on Qwen, 129,897 weights (0.0076%) on SmolLM2. No retraining, no gradients.
+- **Result:** Qwen 37.78 → 67.22 (+29.44); SmolLM2 76.11 → 85.56 (+9.44). Good and neighbours stayed at 100.
+- **Gate:** 2 of 7 runs passed. The other 5 were refused and shipped 0 weights.
+- **Proof:** every run, pass and fail, is published in [REAL-RUNS.md](REAL-RUNS.md).
+
 > **wsp-kit by Aurem** — an engineering tool for small models. Try to fix small AI models by editing their weights directly — no retraining, no fine-tuning, no gradients — with an eval gate deciding whether any edit ships.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
