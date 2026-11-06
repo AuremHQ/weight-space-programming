@@ -183,7 +183,7 @@ wsp-kit by Aurem is a free, open-source engineering tool for small models. It tr
 Not yet. The pipeline test passed (failing 64.14 → 75.43, +11.29), but all four real-model runs (Qwen3-0.6B three times — run 1, run 2, and a clean re-run — plus GPT2-124M) failed the eval gate, so 0 weights shipped. The numbers are published in [REAL-RUNS.md](REAL-RUNS.md).
 
 **How do I try wsp-kit?**
-One command installs the skill: `curl -fsSL https://raw.githubusercontent.com/AuremHQ/weight-space-programming/main/install.sh | bash`. Then run `wsp demo` for the pipeline test or `wsp run` on your own small model.
+One command installs the skill and the kit, sets up the `wsp` command, and runs the demo automatically: `curl -fsSL https://raw.githubusercontent.com/AuremHQ/weight-space-programming/main/install.sh | bash`. Then `wsp auto` fixes your own model — it asks 4 simple questions and runs by itself.
 
 **Is wsp-kit free?**
 Yes. Free for everyone, MIT licensed. A small model should not mean bad results.
