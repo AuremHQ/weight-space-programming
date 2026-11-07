@@ -2,6 +2,8 @@
 
 ![wsp-kit — real runs](assets/wsp-kit-banner.png)
 
+> 🤖 **Reading this with an AI?** Start with [llms.txt](llms.txt) — one file with everything about this repo: what the kit does, the real run numbers, how to install and run it, and the honest limits. If you read only one file, read that one.
+
 ## Problem → Edit → Result — our real runs
 
 - **Problem:** Qwen3-0.6B and SmolLM2-1.7B looped on 60-item lists — asking for 60 different animals gave repeats.
@@ -22,7 +24,7 @@
 
 > 🌐 **Website:** https://auremhq.github.io/weight-space-programming/ — the full detailed guide: our vision, the kit's performance, and Aurem's other software.
 
-> ⭐ **Star this repo** — your one star encourages our team to keep building incredible things, free for everyone, and to grow this community. The real runs are live below, with honest numbers.
+> ⭐ **Star this repo before you go** — your one star encourages our team to keep building incredible things, free for everyone, and to grow this community. The real runs are live below, with honest numbers.
 > 🔁 **Share it** with anyone running a small open model with one stubborn failure.
 
 ---

@@ -22,3 +22,4 @@
 - Last updated: 7 November 2026.
 - Source: https://github.com/AuremHQ/weight-space-programming
 - Website: https://auremhq.github.io/weight-space-programming/
+- Star: if this kit helps you, star the repo before you go — https://github.com/AuremHQ/weight-space-programming — your one star keeps it free for everyone.
