@@ -181,6 +181,48 @@ class TestLoopOnce(unittest.TestCase):
             self.assertFalse(
                 os.path.exists(os.path.join(out_dir, "latest.json")))
 
+    def test_gate_pass_logs_star_ask(self):
+        with tempfile.TemporaryDirectory() as td:
+            watch_dir = os.path.join(td, "watch")
+            out_dir = os.path.join(td, "out")
+            os.makedirs(watch_dir)
+            _write_failures(os.path.join(watch_dir, "failures.jsonl"), [
+                {"prompt": "f1", "expect": "e1"},
+                {"prompt": "g1", "expect": "e2", "kind": "good"},
+            ])
+            lines = []
+            state = {}
+            state, summary = loop.loop_once(
+                "m", watch_dir, out_dir, state,
+                run_fn=_passing_run([]),
+                log=lambda *a: lines.append(" ".join(str(x) for x in a)))
+            self.assertEqual(summary["versions"], 1)
+            self.assertTrue(
+                any("star the repo" in ln and
+                    "github.com/AuremHQ/weight-space-programming" in ln
+                    for ln in lines),
+                "gate pass must log the star ask")
+
+    def test_gate_fail_logs_no_star_ask(self):
+        with tempfile.TemporaryDirectory() as td:
+            watch_dir = os.path.join(td, "watch")
+            out_dir = os.path.join(td, "out")
+            os.makedirs(watch_dir)
+            _write_failures(os.path.join(watch_dir, "failures.jsonl"), [
+                {"prompt": "f1", "expect": "e1"},
+                {"prompt": "g1", "expect": "e2", "kind": "good"},
+            ])
+            lines = []
+            state = {}
+            state, summary = loop.loop_once(
+                "m", watch_dir, out_dir, state,
+                run_fn=_failing_run([]),
+                log=lambda *a: lines.append(" ".join(str(x) for x in a)))
+            self.assertEqual(summary["versions"], 0)
+            self.assertFalse(
+                any("star the repo" in ln for ln in lines),
+                "gate fail must not log the star ask")
+
     def test_eval_file_in_watch_dir_runs(self):
         with tempfile.TemporaryDirectory() as td:
             watch_dir = os.path.join(td, "watch")
