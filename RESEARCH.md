@@ -61,7 +61,7 @@ The team says it is now building a benchmark and harness to turn what currently 
 
 - **One editor model.** Everything above was done with GPT-6 Astra. Whether other frontier models can do this equally well is unproven.
 - **Small models only.** The largest real model edited was 0.8B parameters. Nothing here shows this works on large production models.
-- **Not peer-reviewed, not yet replicated.** This is a blog post with public logs. Independent replication is still pending.
+- **Not peer-reviewed.** This is a blog post with public logs. Hugging Face's Ahsen Khaliq rebuilt the edited model from the authors' logs, re-ran its evaluation, and made a live demo.
 - **A prompt-hint controversy.** A researcher noticed the Qwen prompt contained a hint about repetition (added by Claude Code while expanding the prompt, without further human feedback). The team's reply: a no-hint run at 25 passes also scored 14.1%, matching the hinted run. Treat the headline number as budget-dependent, not magic.
 - **Context and harness limits.** The authors name context length and harness efficiency as the current bottlenecks.
 - **Prior art exists.** Targeted weight editing is not brand new: ROME (NeurIPS 2022) edited factual associations in transformers, and MEMIT (ICLR 2023) extended that to thousands of associations at once. What is new here is a general-purpose model doing it natively, without being specially trained for the task.

@@ -6,7 +6,7 @@ It does not work on closed API models, it does not train anything, and it never 
 
 ## How this differs from gradient descent
 
-Gradient descent trains a model: data plus a loss function produce gradients, and many small updates (w ← w − η∇L) slowly move the weights. This skill does none of that. It makes one reasoned, direct edit — subtracting a diagnosed direction from a small set of layers — with no data, no loss function, no gradients, and no training loop. Then the eval gate proves whether that single edit helped, on your own prompts. If you want training, use training. If you want one stubborn failure removed without retraining, use this.
+Gradient descent trains a model: data plus a loss function produce gradients, and many small updates (w ← w − η∇L) slowly move the weights. This skill does none of that. It makes one reasoned, direct edit — subtracting a diagnosed direction from a small set of layers, or dampening the suspect columns down — with no data, no loss function, no gradients, and no training loop. Then the eval gate proves whether that single edit helped, on your own prompts. If you want training, use training. If you want one stubborn failure removed without retraining, use this.
 
 ## The steps
 
@@ -31,7 +31,7 @@ Before touching any weight, try the cheap fixes: a prompt change, a decoding or 
 
 ### Step 2 — Fix
 
-- Subtract the offending direction from the identified layers/columns only — the same shape as the MIT Qwen fix (one direction, a small set of layers, a small set of output columns).
+- Subtract the offending direction from the identified layers/columns only, or dampen the suspect columns down — the same shape as the MIT Qwen fix (one direction, a small set of layers, a small set of output columns). Both have passed the gate: subtraction on SmolLM2, dampening on Qwen.
 - Report exactly: layers touched, columns touched, weight count changed, percentage of total weights changed.
 - **If a fix touches more than 1% of weights, reject it as "too broad."** Small targeted edits are the entire point.
 - Never run a training loop, never compute gradients, never touch a dataset. Direct edits only.
