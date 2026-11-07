@@ -7,7 +7,7 @@
 - [README](https://github.com/AuremHQ/weight-space-programming/blob/main/README.md): what the kit is, real run numbers, how it works, honest limits
 - [SKILL.md](https://github.com/AuremHQ/weight-space-programming/blob/main/SKILL.md): the weight-space programming skill — 3-step workflow, refusal rules, eval gate
 - [RESEARCH.md](https://github.com/AuremHQ/weight-space-programming/blob/main/RESEARCH.md): the MIT CSAIL research this builds on, all 8 experiments, honest limits
-- [REAL-RUNS.md](https://github.com/AuremHQ/weight-space-programming/blob/main/REAL-RUNS.md): our real-model runs (Qwen3-0.6B, GPT2-124M) with full numbers
+- [REAL-RUNS.md](https://github.com/AuremHQ/weight-space-programming/blob/main/REAL-RUNS.md): our real-model runs (Qwen3-0.6B, GPT2-124M, SmolLM2-1.7B-Instruct) with full numbers
 - [Kit README](https://github.com/AuremHQ/weight-space-programming/blob/main/kit/README.md): install and run the kit, CLI and MCP tools
 - [Install](https://raw.githubusercontent.com/AuremHQ/weight-space-programming/main/install.sh): one-command skill installer
 
@@ -16,8 +16,9 @@
 - Name: wsp-kit by Aurem. Team: Ora by Aurem (https://auremcto.com). Founder: Tejinder Sandhu.
 - License: MIT. Price: free for everyone.
 - Models: small open-weight models only, up to 3 billion parameters. Closed API models are refused by design.
-- Method: diagnose the failure in the weights, subtract the failure direction from MLP output columns (under 1% of weights), re-test with an eval gate.
+- Method: diagnose the failure in the weights, then subtract the failure direction from MLP output columns or dampen them (under 1% of weights), and re-test with an eval gate.
 - Gate: an edit ships only if the failing metric improves by at least 5 points with no more than 2 points regression on guards and neighbours, at serving temperature and greedy.
-- Real results so far: pipeline test passed (failing 64.14 → 75.43, +11.29, 128 weights, 0.77%). Qwen3-0.6B run 1, run 2, and clean re-run, and GPT2-124M all failed the gate — 0 weights shipped. No real-model edit has passed the gate yet.
+- Real results so far (REAL-RUNS.md, 5 Nov 2026): 7 real-model runs, 2 passed the eval gate, 5 were refused with 0 weights shipped. Passes: SmolLM2-1.7B-Instruct (subtraction, layer 23, 129,897 weights, failing 76.11 → 85.56) and Qwen3-0.6B narrow animals eval (dampening 0.25, layers 27 and 26, 131,072 weights, failing 37.78 → 67.22). Both are one failure type: 60-item list looping. Refused: Qwen3-0.6B (4 runs) and GPT2-124M (1 run). The pipeline test on a synthetic model also passed (failing 64.14 → 75.43). Not peer-reviewed.
+- Last updated: 7 November 2026.
 - Source: https://github.com/AuremHQ/weight-space-programming
 - Website: https://auremhq.github.io/weight-space-programming/
