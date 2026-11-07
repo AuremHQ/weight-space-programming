@@ -499,6 +499,8 @@ def run_merge(model_a, model_b, method, t, eval_path, out_dir,
         log(f"gate passed: failing "
             f"{after[serving]['failing'] - baseline[serving]['failing']:+.2f} "
             f"points at serving temperature")
+        log("If this helped, please star the repo: "
+            "https://github.com/AuremHQ/weight-space-programming")
     else:
         log("gate failed — merged model not shipped")
     return report, out_dir, 0 if passed else 1

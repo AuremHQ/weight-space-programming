@@ -172,6 +172,8 @@ def loop_once(model_id, watch_dir, out_dir, state, run_fn=None,
         if rep is not None and rep.get("gate", {}).get("passed"):
             version = record_version(out_dir, run_dir, rep, model_id)
             log(f"  new version v{version}: {run_dir}")
+            log("If this helped, please star the repo: "
+                "https://github.com/AuremHQ/weight-space-programming")
             summary["versions"] += 1
 
     for path in watch.scan_watch_dir(watch_dir, state):
