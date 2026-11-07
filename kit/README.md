@@ -241,12 +241,14 @@ the suspect columns moved the failing subset from 22.78 to 19.44
 pipeline stopped, no edit was made, nothing shipped**. The output
 directory holds only `report.json`.
 
-Read that outcome the way it is meant: the pipeline ran end to end
+Read that outcome the way it is meant: the pipeline ran end to
+end
 on a real model and refused to edit without a causal diagnosis. That
 refusal is the feature, not a bug — it is the same discipline as
 MIT's Gemma control, which could not be improved either. What this
-run does NOT show is a passing edit; a passing real-model edit is
-still unproven, and no number here claims otherwise. Task pack:
+run does NOT show is a passing edit — this run was refused. Passing
+real-model edits now exist: SmolLM2 (+9.44) and Qwen narrow dampen
+(+29.44); see the repo's REAL-RUNS.md. Task pack:
 `tasks/loop-fix-real/task.json`.
 
 **Qwen run 2 — same model, diagnosis contrast fixed (neighbours set
@@ -296,7 +298,8 @@ exactly that reason.
    failure moves. A suspect that does not move the failure is not a
    diagnosis and is not edited.
 4. **Edit.** Subtract the estimated direction from the identified row
-   only. Over 1% of weights is rejected as too broad. Original files
+   only, or dampen the suspect columns down (the Qwen pass used
+   dampening by 0.25). Over 1% of weights is rejected as too broad. Original files
    are never overwritten; the edited weights are a separate artifact
    plus the script that reproduces them.
 5. **Gate.** Same prompts, same settings, before and after, at the
