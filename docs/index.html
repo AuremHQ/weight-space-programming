@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>wsp-kit by Aurem — an engineering tool for small models</title>
 <meta name="description" content="wsp-kit by Aurem tries to fix small open-weight models by editing their weights directly — no retraining, no fine-tuning, no gradients. An eval gate decides whether any edit ships. Free and open source (MIT). Full vision, real performance numbers, and Aurem's other software.">
-<meta name="keywords" content="wsp-kit, weight-space programming, small language models, model editing, eval gate, open source, Aurem, ORA, ora-grounding">
 <meta property="og:type" content="website">
 <meta property="og:title" content="wsp-kit by Aurem — an engineering tool for small models">
 <meta property="og:description" content="Try to fix small open-weight models by editing their weights directly. No retraining. An eval gate decides. Free for everyone.">
@@ -132,16 +131,17 @@
   </div>
 </header>
 
+<main>
 <div class="wrap">
   <div class="hero">
     <h1>wsp-kit <b>by Aurem</b></h1>
     <p class="tagline">An engineering tool for small models.</p>
     <p class="hook">We tried to fix a real model without retraining — the gate said <b>NO five times, and YES twice.</b><br>
-    That honesty is the product. Small model. Best results. Free for everyone.</p>
+    That honesty is the product. Small model. Measured results. Free for everyone.</p>
     <p class="hook">We didn't train it. We edited it. <b>260,969 weights changed</b> across our two passing edits — no gradients, no retraining.<br>
     (131,072 on Qwen3-0.6B, 129,897 on SmolLM2-1.7B.)</p>
     <div class="proof">
-      <span class="chip"><span class="g">✓ KIT TEST — PASSED</span> &nbsp;+11.29 &nbsp;(64.14 → 75.43)</span>
+      <span class="chip"><span class="g">✓ PIPELINE TEST (synthetic model) — PASSED</span> &nbsp;+11.29 &nbsp;(64.14 → 75.43)</span>
       <span class="chip gold">FREE • OPEN SOURCE • MIT</span>
     </div>
     <p class="star"><a href="https://github.com/AuremHQ/weight-space-programming"><img src="https://img.shields.io/github/stars/AuremHQ/weight-space-programming?style=social" alt="Star wsp-kit on GitHub"></a></p>
@@ -151,11 +151,11 @@
       <a class="btn btn-ghost" href="https://auremcto.com">ORA by Aurem →</a>
     </div>
     <p>Your one star encourages our team to keep building incredible things — free for everyone — and to grow this community.</p>
-    <pre>curl -fsSL https://raw.githubusercontent.com/AuremHQ/weight-space-programming/main/install.sh | bash</pre>
+    <p>Install it in one command — see <a href="#try">Try it</a> below.</p>
   </div>
 
   <section id="vision">
-    <h2>Our vision</h2>
+    <h2>Why build wsp-kit?</h2>
     <p>Big AI should not belong only to the people who can pay for big models. A small model running on your own machine should still perform at its best — and everyone should have the right to the best experience and the best results.</p>
     <div class="vision">
       "This kit is free for everyone, and it stays free. A small model should not mean bad results — everyone has the right to the best experience and the best results. The team's vision is simple: everyone should benefit from this kit."
@@ -165,18 +165,18 @@
   </section>
 
   <section id="how">
-    <h2>How it works</h2>
-    <p>wsp-kit follows the weight-space programming idea from <a href="https://rikiyat.github.io/blog/weight-space-programming/">"Sparks of Weight-Space Programming"</a> — a research blog post by the MIT CSAIL team (published 2026-11-02; a blog post, not a peer-reviewed paper, and not yet independently replicated). The idea: a model's failure can live in a small set of weights. Find those weights, change them a little, and the failure can go away — without retraining the model.</p>
+    <h2>How does wsp-kit work?</h2>
+    <p>wsp-kit follows the weight-space programming idea from <a href="https://rikiyat.github.io/blog/weight-space-programming/">"Sparks of Weight-Space Programming"</a> — a research blog post by the MIT CSAIL team (published 2026-11-02; a blog post, not a peer-reviewed paper. Not peer-reviewed; Hugging Face rebuilt the edited model from the authors' logs). The idea: a model's failure can live in a small set of weights. Find those weights, change them a little, and the failure can go away — without retraining the model.</p>
     <div class="steps">
       <div class="step"><div class="n">0</div><h3>Cheap fix first</h3><p>Before touching any weight, the kit tries the free knobs — temperature first. If a setting fixes it, no edit is needed.</p></div>
       <div class="step"><div class="n">1</div><h3>Detect</h3><p>Measure the failure, then prove the cause: disable the suspected weights and check whether the failure disappears. The bar is +5 points — no proof, no edit.</p></div>
-      <div class="step"><div class="n">2</div><h3>Fix</h3><p>Subtract the failure direction from the MLP output columns — under 1% of the model's weights, at most 3 attempts. The original weights are never overwritten.</p></div>
+      <div class="step"><div class="n">2</div><h3>Fix</h3><p>Subtract the failure direction from the MLP output columns, or dampen the suspect columns down — under 1% of the model's weights, at most 3 attempts. The original weights are never overwritten.</p></div>
     </div>
     <p>Then the <strong>eval gate</strong> re-runs the same prompts with the same settings. Only a gate-passing edit ships. The full rules live in <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/SKILL.md">SKILL.md</a>.</p>
   </section>
 
   <section id="performance">
-    <h2>Performance — our real numbers</h2>
+    <h2>Does it fix real models?</h2>
     <p>We publish every run, including the failures. These are our numbers, measured on our own runs — not MIT's.</p>
 
     <h3>The pipeline test — passed</h3>
@@ -191,6 +191,7 @@
     <p>The pipeline test is a small 2-layer test model with a known, planted failure. It proves the kit works end to end: detect, edit, gate, ship.</p>
 
     <h3>Real models — 2 of 7 passed the gate</h3>
+    <p>Seven real runs are counted. The table shows six rows: a second Qwen run also passed the causal proof (+32.22), but its attempt numbers were contaminated by a restore bug — the clean re-run below replaced it. The full story is in REAL-RUNS.md.</p>
     <div class="scroll"><table>
       <tr><th>Run</th><th>Failing score</th><th>Causal proof</th><th>Gate</th><th>Weights shipped</th></tr>
       <tr><td>Qwen3-0.6B — run 1</td><td>31.11 (good: 100)</td><td>−3.33 (bar +5) — failed</td><td><span class="r">REFUSED</span></td><td>0</td></tr>
@@ -201,7 +202,6 @@
       <tr><td>SmolLM2-1.7B-Instruct</td><td>76.11 → 85.56 (good: 100)</td><td>−30.00 (bar +5) — failed</td><td><span class="g">PASSED +9.44</span></td><td>129,897</td></tr>
     </table></div>
     <p>All three models looped on 60-item lists (ask for 60 different animals and get repeats). The first four real runs were all refused: the diagnosis was sometimes right — the causal proof passed on the clean Qwen re-run (+32.22) and on the narrow eval (+23.89) — but the subtraction edit did not reproduce the benefit: every attempt made the failing score worse at greedy temperature. Then the editor changed. On the narrow Qwen eval, <strong>dampening</strong> the suspect columns (scaled down by 0.25) passed the gate: failing 37.78 → 67.22 (+29.44), good and neighbours still 100. And on SmolLM2, a <strong>subtraction</strong> on layer 23 alone passed: failing 76.11 → 85.56 (+9.44), good and neighbours still 100 — even though its causal proof was negative (−30.00). So the gate refused 5 of 7 runs, and <strong>260,969 weights shipped in total</strong> from the 2 passes. The full reports are in <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/REAL-RUNS.md">REAL-RUNS.md</a>.</p>
-    <p>A second Qwen run also passed the causal proof (+32.22), but its attempt numbers were contaminated by a restore bug — the clean re-run above replaced it. The full story is in REAL-RUNS.md.</p>
     <p>One honest caveat on the Qwen pass: the +29.44 slightly overstates the gain — the scorer counts 'Penguin' and 'Penguin (again)' as distinct items, so repeats with "(again)" still score. It clears the +5 bar by a wide margin, but the true gain is a little smaller than 29.44.</p>
 
     <div class="plain">
@@ -209,11 +209,11 @@
     </div>
 
     <div class="plain">
-      <p><strong>What it CAN'T do.</strong> Editing removes an obstacle — it cannot add knowledge or an ability that was never there. If the failure is a missing ability rather than a blocked one, the kit refuses. MIT's Gemma 3 270M control model could not be improved at all. And our own gate refused 5 of our 7 real-model runs — those edits shipped nothing.</p>
+      <p><strong>What it CAN'T do.</strong> Editing removes an obstacle — it cannot add knowledge or an ability that was never there. If the failure is a missing ability rather than a blocked one, the kit refuses. MIT's Gemma 3 270M control model: no edit moved MATH-500 by more than about 1 point (base 6.8, edited 7.0–7.7). And our own gate refused 5 of our 7 real-model runs — those edits shipped nothing.</p>
     </div>
 
     <h3>Where it started — MIT's numbers</h3>
-    <p>MIT's team edited Qwen3.5-0.8B the same way — subtracting a direction from the MLP output columns of layers 15 and 19, just 131,072 weights (0.016% of the model):</p>
+    <p>MIT's team made a similar edit on Qwen3.5-0.8B — subtracting a direction from the MLP output columns of layers 15 and 19, just 131,072 weights (0.016% of the model). In MIT's experiment a frontier LLM, GPT-6 Astra, read the weights and made the edit with up to 50 forward passes. wsp-kit uses a numerical estimator with no LLM:</p>
     <div class="scroll"><table>
       <tr><th>Benchmark</th><th>Before</th><th>After</th></tr>
       <tr><td>MATH-500</td><td>7.9</td><td>48.1</td></tr>
@@ -221,11 +221,11 @@
       <tr><td>IFEval</td><td>21.0</td><td>62.3</td></tr>
       <tr><td>Token-limit hits</td><td>93.0%</td><td>33.1%</td></tr>
     </table></div>
-    <p>Editing removes obstacles — it cannot add abilities. MIT's Gemma 3 270M control model could not be improved at all. Full detail: <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/RESEARCH.md">RESEARCH.md</a>.</p>
+    <p>Editing removes obstacles — it cannot add abilities. MIT's Gemma 3 270M control model: no edit moved MATH-500 by more than about 1 point (base 6.8, edited 7.0–7.7). Full detail: <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/RESEARCH.md">RESEARCH.md</a>.</p>
   </section>
 
   <section id="gate">
-    <h2>The eval gate</h2>
+    <h2>What is the eval gate?</h2>
     <p>The gate is the whole point. An edit ships only if <strong>all</strong> of these hold:</p>
     <ul>
       <li>The failing metric improves by <strong>at least 5 points</strong>.</li>
@@ -236,11 +236,11 @@
   </section>
 
   <section id="live">
-    <h2>Keep it improving — in the background, live</h2>
-    <p>Fixing a model once is not enough — it will fail at new things. So the kit can keep working in the background, and your running model keeps getting better without you doing anything.</p>
+    <h2>Does it keep improving in the background?</h2>
+    <p>Fixing a model once is not enough — it will fail at new things. So the kit can keep working in the background. The loop and live model are available, not yet benchmarked — no published run of them exists yet, so the claim is only that they run, not that they improve a model.</p>
     <div class="steps">
       <div class="step"><div class="n">1</div><h3>It watches for failures</h3><p><code>wsp loop</code> watches a folder. When your model fails at something — you write the failure in a file, or drop in a test file — the kit runs the gated pipeline on it.</p></div>
-      <div class="step"><div class="n">2</div><h3>Only passing fixes become versions</h3><p>If the fix passes the eval gate, it becomes a new version. If it fails the gate, nothing ships — and the same failure is never retried.</p></div>
+      <div class="step"><div class="n">2</div><h3>Only passing fixes become versions</h3><p>If the fix passes the eval gate, it becomes a new version. If it fails the gate, the edit is discarded — and the same failure is never retried.</p></div>
       <div class="step"><div class="n">3</div><h3>Your model updates live</h3><p><code>wsp serve-model</code> serves your model and applies each new passing fix to the SAME running model — the old weights are overridden in place. No reload, no restart, no swap. The next prompt automatically uses the updated weights.</p></div>
     </div>
     <pre>wsp loop --model Qwen/Qwen3-0.6B --watch-dir ./evals-incoming --out-dir ./wsp-loop-out
@@ -249,17 +249,15 @@ wsp serve-model --model Qwen/Qwen3-0.6B --versions-dir ./wsp-loop-out</pre>
   </section>
 
   <section id="try">
-    <h2>Try it — easy mode</h2>
+    <h2>How do I try it?</h2>
     <p>One command installs the skill and the kit, sets up the <code>wsp</code> command, and runs the demo automatically — so you see a result in seconds, with nothing to configure.</p>
     <pre>curl -fsSL https://raw.githubusercontent.com/AuremHQ/weight-space-programming/main/install.sh | bash</pre>
     <p>After install, the demo has already run and shown its result. Then one command fixes your own model — it asks 4 simple questions (which model, what goes wrong, what goes right, what should not change), builds the test file, runs the pipeline, and shows the result:</p>
     <pre>wsp auto</pre>
     <p>See the result on the status page:</p>
     <pre>wsp serve</pre>
-    <p>Keep it improving in the background, and serve the same model with its weights updated live — no reload, no swap:</p>
-    <pre>wsp loop --model Qwen/Qwen3-0.6B --watch-dir ./evals-incoming --out-dir ./wsp-loop-out
-wsp serve-model --model Qwen/Qwen3-0.6B --versions-dir ./wsp-loop-out</pre>
-    <p>If the kit helped, please <a href="https://github.com/AuremHQ/weight-space-programming">star the repo</a> — your one star encourages our team to keep building incredible things, free for everyone, and to grow this community.</p>
+    <p>Keep it improving in the background, and serve the same model with its weights updated live — no reload, no swap. The two commands are in <a href="#live">Does it keep improving in the background?</a> above.</p>
+    <p>If the kit helped, please <a href="https://github.com/AuremHQ/weight-space-programming">star the repo</a>.</p>
     <h3>Commands</h3>
     <ul>
       <li><code>wsp auto</code> — easy mode: 4 questions, then the kit runs by itself.</li>
@@ -278,18 +276,18 @@ wsp serve-model --model Qwen/Qwen3-0.6B --versions-dir ./wsp-loop-out</pre>
       <li>No adding abilities — only removing a diagnosed obstacle.</li>
       <li>No production-branch edits, no safety removal.</li>
     </ul>
-    <p>Full install and tool docs: <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/kit/README.md">kit/README.md</a>. Machine-readable index: <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/llms.txt">llms.txt</a>.</p>
+    <p>Full install and tool docs: <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/kit/README.md">kit/README.md</a>. Machine-readable index: <a href="https://auremhq.github.io/weight-space-programming/llms.txt">llms.txt</a>.</p>
   </section>
 
   <section id="aurem">
-    <h2>Aurem's other software</h2>
+    <h2>What else does Aurem build?</h2>
     <p>wsp-kit is one tool from Aurem. The team builds engineering tools for people who run software — and for people who don't code at all.</p>
 
     <div class="grid2">
       <div class="card">
         <h3>ORA by Aurem</h3>
         <p><strong>The AI engineer for non-technical founders.</strong> ORA is an autonomous AI software engineer: it connects to your GitHub repository, plans a change, writes the code, runs a pre-commit security scan (Vanguard), and ships it only after your approval — a 5-phase loop: Plan → Execute → Verify → Scan → Ship.</p>
-        <p>Free: 10 tasks a month, no credit card. Starter: $9/month flat. Browser app and terminal MCP server; no IDE required. Python, JavaScript, TypeScript, Go, Rust, Java, Kotlin, Swift, Ruby, PHP, C, and C++.</p>
+        <p>Free and Starter plans — see <a href="https://auremcto.com/pricing">auremcto.com/pricing</a>. Browser app and terminal MCP server; no IDE required. Python, JavaScript, TypeScript, Go, Rust, Java, Kotlin, Swift, Ruby, PHP, C, and C++.</p>
         <p><a href="https://auremcto.com">auremcto.com →</a></p>
       </div>
       <div class="card">
@@ -314,7 +312,7 @@ wsp serve-model --model Qwen/Qwen3-0.6B --versions-dir ./wsp-loop-out</pre>
     </details>
     <details>
       <summary>How do I try wsp-kit?</summary>
-      <p>One command installs the skill: <code>curl -fsSL https://raw.githubusercontent.com/AuremHQ/weight-space-programming/main/install.sh | bash</code>. Then run <code>wsp demo</code> for the pipeline test or <code>wsp run</code> on your own small model.</p>
+      <p>See <a href="#try">How do I try it?</a> above: one install command, then <code>wsp demo</code> for the pipeline test or <code>wsp run</code> on your own small model.</p>
     </details>
     <details>
       <summary>Is wsp-kit free?</summary>
@@ -322,33 +320,54 @@ wsp serve-model --model Qwen/Qwen3-0.6B --versions-dir ./wsp-loop-out</pre>
     </details>
     <details>
       <summary>What is the eval gate?</summary>
-      <p>The eval gate re-runs the same prompts with the same settings after an edit. The edit ships only if the failing metric improves by at least 5 points with no more than 2 points regression on guards and neighbours, at serving temperature and greedy. If the numbers don't improve, nothing ships.</p>
+      <p>The eval gate re-runs the same prompts with the same settings after an edit. The edit ships only if the failing metric improves by at least 5 points with no more than 2 points regression on guards and neighbours, at serving temperature and greedy. If the numbers don't improve, the edit is discarded.</p>
     </details>
     <details>
-      <summary>Which models does wsp-kit support?</summary>
-      <p>Small open-weight models up to 3B parameters that you control. Closed API models (ChatGPT, Claude) are refused — their weights are never in your hands.</p>
+      <summary>Which models does wsp-kit support — and does it work on ChatGPT or Claude?</summary>
+      <p>Small open-weight models up to 3B parameters that you control. Closed API models (ChatGPT, Claude) are refused — their weights are never in your hands, so there is nothing to edit. wsp-kit works on small open-weight models you can download and run yourself.</p>
     </details>
     <details>
       <summary>Can it make my model smarter?</summary>
-      <p>No. Editing removes obstacles — it cannot add abilities. MIT's Gemma 3 270M control model could not be improved at all. If the failure is a missing ability rather than a blocked one, the kit refuses.</p>
+      <p>No. Editing removes obstacles — it cannot add abilities. MIT's Gemma 3 270M control model: no edit moved MATH-500 by more than about 1 point (base 6.8, edited 7.0–7.7). If the failure is a missing ability rather than a blocked one, the kit refuses.</p>
     </details>
     <details>
       <summary>What happens if the gate fails?</summary>
       <p>Nothing ships. The report is saved, the original weights are untouched, and the run is logged in REAL-RUNS.md. Five of our seven real-model runs ended this way — and we publish them anyway.</p>
     </details>
     <details>
-      <summary>Does it work on ChatGPT or Claude?</summary>
-      <p>No. Those are closed API models — their weights are never in your hands, so there is nothing to edit. wsp-kit works on small open-weight models you can download and run yourself.</p>
+      <summary>What do I need to run wsp-kit?</summary>
+      <p>Python 3.9+ and numpy run the demo. Real models need <code>pip install 'wsp-kit[real]'</code>, which adds torch, transformers and accelerate. The published runs used CPU in bfloat16 and took about 32 to 58 minutes for Qwen3-0.6B and about 35 minutes for GPT2-124M.</p>
+    </details>
+    <details>
+      <summary>What does the install command do?</summary>
+      <p>It downloads SKILL.md into ~/.claude/skills/weight-space-programming (backing up an existing copy), downloads the kit into ~/.wsp-kit, adds a <code>wsp</code> launcher in ~/.local/bin (no sudo, PATH unchanged), and runs the demo, which needs no model download. To uninstall, delete those three locations. To read the script first, download install.sh and run it yourself.</p>
+    </details>
+    <details>
+      <summary>Is wsp-kit the same method as MIT's?</summary>
+      <p>No. wsp-kit is an independent implementation inspired by the MIT CSAIL blog post of 2 November 2026 and is not affiliated with MIT. In MIT's experiment a frontier LLM, GPT-6 Astra, read the weights and made the edit with up to 50 forward passes. wsp-kit uses a numerical estimator with no LLM. MIT's numbers are theirs, not ours.</p>
+    </details>
+    <details>
+      <summary>Does wsp-kit subtract or dampen?</summary>
+      <p>Both have passed the gate: subtraction on SmolLM2 and dampening on Qwen. In our runs, a positive causal proof pointed to dampening and a negative one to subtraction, but REAL-RUNS.md says there is no single editor yet.</p>
+    </details>
+    <details>
+      <summary>Can an edit remove safety behaviour?</summary>
+      <p>It can, which is why the kit refuses safety-removal requests and every edit goes through the eval gate and human review (kit README, Limits).</p>
+    </details>
+    <details>
+      <summary>Can I undo an edit?</summary>
+      <p>Yes. Original weights are never overwritten: edited weights go to a new directory, and applying an edit is a separate step (<code>wsp apply-edit</code>). On a live model, <code>POST /rollback</code> undoes the last applied edit.</p>
     </details>
   </section>
 </div>
+</main>
 
 <footer>
   <div class="wrap">
     <p><strong style="color:#fff">wsp-kit by Aurem</strong> — an engineering tool for small models. Free for everyone, MIT licensed.</p>
     <p>
       <a href="https://github.com/AuremHQ/weight-space-programming">GitHub repo</a> ·
-      <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/llms.txt">llms.txt</a> ·
+      <a href="https://auremhq.github.io/weight-space-programming/llms.txt">llms.txt</a> ·
       <a href="https://auremcto.com">ORA by Aurem</a> ·
       <a href="https://github.com/AuremHQ/ora-grounding">ora-grounding</a> ·
       <a href="https://github.com/AuremHQ">AuremHQ</a> ·
