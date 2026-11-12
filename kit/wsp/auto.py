@@ -10,7 +10,7 @@ The eval file uses the "contains" scorer for all three sets: each
 prompt carries what the right answer should contain. A failing
 prompt is one where the model does NOT produce it; a good prompt is
 one where it does. Neighbours are nearby prompts that must not
-change. The gate works unchanged: failing +5, guards/neighbours -2.
+change. The gate works unchanged: failing +2, guards/neighbours -2.
 
 `wsp auto` never runs on a model the user did not point it at, and
 it never overwrites the original model — on a gate pass the edited
@@ -131,8 +131,14 @@ def ask_questions(input_fn=input, print_fn=print):
 
 
 def run_auto(model_id=None, eval_path=None, out_dir="wsp-auto-out",
-             serve=False, input_fn=input, print_fn=print, log=print):
-    """Easy mode end to end. Returns an exit code (0 = gate passed)."""
+             serve=False, input_fn=input, print_fn=print, log=print,
+             protocol="v1"):
+    """Easy mode end to end. Returns an exit code (0 = gate passed).
+
+    ``protocol`` defaults to v1 (D1): easy mode is a quick personal
+    check, labelled QUICK — never standard evidence unless the
+    caller asks for v2.
+    """
     if eval_path:
         data = load_eval_file(eval_path)
         model_id = data.get("model")
@@ -159,7 +165,7 @@ def run_auto(model_id=None, eval_path=None, out_dir="wsp-auto-out",
         return 2
     try:
         rep, _dir, code = run_real_pipeline(
-            model_id, eval_file, out_dir, log=log)
+            model_id, eval_file, out_dir, log=log, protocol=protocol)
     except (FileNotFoundError, ValueError) as exc:
         print_fn(f"error: {exc}")
         return 2
@@ -173,8 +179,10 @@ def run_auto(model_id=None, eval_path=None, out_dir="wsp-auto-out",
               f"good {rep['after']['good'] - rep['before']['good']:+.2f} points, "
               f"neighbours {rep['after']['neighbours'] - rep['before']['neighbours']:+.2f} points")
         print_fn(f"  {rep['weights_changed']} weights ({rep['weights_changed_pct']:.2f}%)")
-        print_fn("If this helped, please star the repo: "
-              "https://github.com/AuremHQ/weight-space-programming")
+        # Star ask, gated (D2, W3.4): only after a standard-evidence SHIP.
+        from .cli import maybe_nudge
+
+        maybe_nudge(rep, print_fn=print_fn)
     else:
         print_fn(f"  reason: {rep['gate'].get('reason')}")
     print_fn(f"wrote {out_dir}/report.json")

@@ -30,7 +30,7 @@ wsp auto
 It asks 4 simple questions (which model, what goes wrong, what goes
 right, what should not change), builds the test file, runs the gated
 pipeline, and shows the result. Nothing runs on a model you did not
-point it at, and no edit ever overwrites your original model. See the
+point it at, and no edit ever overwrites your original model on disk. See the
 result on the status page with `wsp serve`.
 
 ## Install
@@ -50,7 +50,7 @@ pip install git+https://github.com/AuremHQ/weight-space-programming#subdirectory
 Optional extras:
 
 ```
-pip install 'wsp-kit[mcp]'          # MCP server support
+pip install 'wsp-kit[mcp]'          # MCP server support (mcp>=2,<3; demo-only toy-model tools)
 pip install 'wsp-kit[safetensors]'  # .safetensors weights support
 ```
 
@@ -131,8 +131,8 @@ between: temperature sweep (Step 0, the cheap knob) → baselines →
 diagnosis → causal proof → up to 3 edit attempts → gate → report.
 It writes `report.json` into `wsp-real-out/` and, only on a gate
 pass, the edited model plus `edit.json` (the reproducible edit
-recipe). The original model files are never touched: edited weights
-always go to a new directory.
+recipe). The original model files on disk are never touched: edited weights
+always go to a new directory. serve-model changes only the in-memory copy of the loaded model.
 
 **Eval files (format v1).** A JSON file with three prompt sets —
 `failing`, `good`, `neighbours` — each with a scorer (`loop`,
@@ -161,6 +161,35 @@ one missed the gate (primary shortfall and guard excess, in points),
 and suggests what to try next — so the best is visible without
 shipping a failing edit. The gate rule is absolute: it is not
 overridden by any flag.
+
+**Flags.**
+
+| Flag | Default | What it does |
+|---|---|---|
+| `--protocol v1\|v2` | v2 (`run`/`watch`/`loop`/`merge`), v1 (`auto`) | v2 is standard evidence: holdout splits, three samples at non-greedy temperatures, a confidence bound on the gate, causal placebos, and the default guard bundle — a run only SHIPs when all of it holds. v1 is the frozen measurement from before, labelled QUICK, never evidence. |
+| `--dry-run` | off (`run` only) | Prints the cost plan — prompt counts per set and split, the protocol values, the exact number of generate calls per phase, and a total — and exits without loading anything or writing anything. |
+| `--tokens-per-second X` | — (`run` only) | With `--dry-run`, also prints a worst-case time estimate at this generation speed. |
+| `--no-default-guards` | off (`run` only) | Turns the default guard bundle off (v2 only; the report records guards as disabled). |
+| `--samples-per-prompt N` | none (resolved by protocol: v1 → 1, v2 → 3) | Samples at non-greedy temperatures; greedy is always 1 sample. |
+
+An **eval pass** is one generate call — the report's
+`eval_passes_spent` counts them, and `generated_tokens` counts the
+tokens they returned.
+
+**Report fields (v2).** Every v2 report adds: `protocol` (`"v2"`),
+`evidence_level` (`"standard"`; v1 reports say `"quick"`),
+`gate.verdict` (`SHIP` / `INCONCLUSIVE` / `REJECT`; v1 says
+`QUICK_PASS` / `QUICK_FAIL`), `eval_sha256` (hash of the eval file),
+`eval_passes_spent` / `generated_tokens` (exact spend),
+`phase_prompt_counts` (which prompts each phase touched),
+`holdout_scores` (per-prompt holdout means, so anyone can recompute
+the confidence bound), `guards` (the three default-guard values, or
+`"disabled"` / `"not evaluated"`), `environment` (Python, platform,
+package versions, device, dtype, kit version and commit),
+`model_revision`, `generation_config_effective`,
+`known_limitations` (the legacy alpha estimator, until Phase 4),
+`editor_info` (numerical estimator, no LLM), `wall_seconds`, and
+`real_demo.protocol_config` (the resolved protocol values).
 
 **Watch mode (opt-in).** `wsp watch` monitors a directory for new
 eval files and runs the same gated pipeline on each one:
@@ -208,12 +237,7 @@ Run `wsp loop` and `wsp serve-model` together: the loop keeps
 improving in the background, and the live model keeps using the
 updated weights — the user gets the benefit without doing anything.
 
-**Scope boundary.** The runner supports open-weight models only,
-up to 3 billion parameters, loaded through HuggingFace Auto classes
-with MLP layers discovered generically (Qwen, Llama, Gemma, Mistral
-and other families — no hardcoded module path). Closed models (GPT,
-Claude, and the like) are OUT of scope by design: their weights are
-unavailable, so no weight edit is possible there.
+**Scope boundary.** The runner supports open-weight models only, loaded through HuggingFace Auto classes with MLP layers discovered generically (Qwen, Llama, Gemma, Mistral and other families — no hardcoded module path). Use small models for better performance. Closed models (GPT, Claude, and the like) are OUT of scope by design: their weights are unavailable, so no weight edit is possible there.
 
 **Worked example: Qwen3-0.6B list-loop demo (verified run, 2026-11-05).**
 Eval file `evals/loop-fix-qwen3-0.6b.json`: 3 failing prompts (list
@@ -241,14 +265,12 @@ the suspect columns moved the failing subset from 22.78 to 19.44
 pipeline stopped, no edit was made, nothing shipped**. The output
 directory holds only `report.json`.
 
-Read that outcome the way it is meant: the pipeline ran end to
-end
+Read that outcome the way it is meant: the pipeline ran end to end
 on a real model and refused to edit without a causal diagnosis. That
 refusal is the feature, not a bug — it is the same discipline as
 MIT's Gemma control, which could not be improved either. What this
-run does NOT show is a passing edit — this run was refused. Passing
-real-model edits now exist: SmolLM2 (+9.44) and Qwen narrow dampen
-(+29.44); see the repo's REAL-RUNS.md. Task pack:
+run does NOT show is a passing edit; a passing real-model edit is
+still unproven, and no number here claims otherwise. Task pack:
 `tasks/loop-fix-real/task.json`.
 
 **Qwen run 2 — same model, diagnosis contrast fixed (neighbours set
@@ -298,24 +320,26 @@ exactly that reason.
    failure moves. A suspect that does not move the failure is not a
    diagnosis and is not edited.
 4. **Edit.** Subtract the estimated direction from the identified row
-   only, or dampen the suspect columns down (the Qwen pass used
-   dampening by 0.25). Over 1% of weights is rejected as too broad. Original files
-   are never overwritten; the edited weights are a separate artifact
-   plus the script that reproduces them.
+   only. Over 1% of weights is rejected as too broad. Original files
+   are never overwritten on disk. The edited weights are a separate artifact
+   plus the script that reproduces them. serve-model changes only the
+   in-memory copy of the loaded model.
 5. **Gate.** Same prompts, same settings, before and after, at the
-   serving temperature and at greedy. Ships only on +5 points primary
+   serving temperature and at greedy. Ships only on +2 points primary
    with no guard or neighbour regression over 2 points. At most 3
    attempts; anything else is discarded, and the report is written
    anyway.
 
-Refusals, enforced in code: no weights, model over 3B parameters, no
-test prompts, add-capability requests with no diagnosed obstacle,
-production-branch edits, safety-removal requests. Any of these stops
-the run with a plain message and nothing edited.
+Refusals — what the kit refuses, and how each is enforced:
+- No eval file (no test prompts from you): enforced in code — the run stops with a plain message (exit 2), nothing edited.
+- No weights (API-only model): partially enforced — the model loader fails and the run stops with a plain message (exit 2), nothing edited; there is no dedicated pre-check.
+- Add capability with no diagnosed obstacle: SKILL.md only — not enforced in code.
+- Edit a production branch in place: SKILL.md only — not enforced in code.
+- Remove safety/refusal behaviour: SKILL.md only — not prevented in code; the v2 default guard bundle detects refusal regression after an edit, it does not prevent safety removal.
 
 ## MCP server
 
-The same pipeline, callable from any MCP-compatible harness or agent:
+The kit pipeline, callable from any MCP-compatible harness or agent — demo only: the tools drive the built-in toy model; use `wsp run` for real models:
 
 ```json
 {
@@ -333,6 +357,7 @@ Tools (all stable):
 | Tool | What it does |
 |---|---|
 | `wsp_version` | Kit and report-format versions |
+| `wsp_capabilities` | What the tools can and cannot do: toy model only, no real models |
 | `kit_baseline` | Build the kit test model, plant the defect, measure the baseline |
 | `kit_temperature_sweep` | Step 0: try temperatures before touching weights |
 | `kit_prove_cause` | Ablation test on the suspect row |
@@ -355,7 +380,7 @@ kit/
     gate.py        eval gate
     report.py      versioned JSON report
     pipeline.py    the full pipeline, used by CLI and MCP alike
-    real_runner.py load/run real models (3B cap), greedy-first gate
+    real_runner.py load/run real models, greedy-first gate
     real_pipeline.py  the real-model pipeline: sweep → proof → attempts
     real_edit.py   layout-aware column edits (Linear + Conv1D)
     layers.py      generic MLP down-proj discovery across families
@@ -364,7 +389,7 @@ kit/
     watch.py       opt-in watch mode (wsp watch)
     loop.py        continuous mode (wsp loop): eval files + failures.jsonl → versions
     serve_model.py live model server (wsp serve-model): new passing edits override weights in place
-    cli.py         `wsp demo`, `wsp run`, `wsp auto`, `wsp watch`, `wsp loop`, `wsp serve-model`, `wsp apply-edit`, `wsp status`, `wsp serve`, `wsp version`
+    cli.py         `wsp demo`, `wsp run`, `wsp auto`, `wsp watch`, `wsp loop`, `wsp serve-model`, `wsp apply-edit`, `wsp reproduce`, `wsp status`, `wsp serve`, `wsp version`
     mcp_server.py  MCP tools
     status.py      `wsp status` — green-only status (gate-passing runs only)
     serve.py       `wsp serve` — local status page (default port 8899)

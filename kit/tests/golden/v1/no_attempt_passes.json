@@ -1,0 +1,363 @@
+{
+  "report_version": 1,
+  "model": "fake-model (real open-weight model, CPU)",
+  "edited_row": null,
+  "weights_changed": 0,
+  "weights_changed_pct": 0.0,
+  "before": {
+    "failing": 47.5,
+    "good": 100.0,
+    "neighbours": 100.0
+  },
+  "after": {
+    "failing": 47.5,
+    "good": 100.0,
+    "neighbours": 100.0
+  },
+  "gate": {
+    "passed": false,
+    "reason": "no attempt passed the gate \u2014 nothing shipped"
+  },
+  "temperatures_checked": [
+    0.0,
+    0.7,
+    1.0,
+    1.5
+  ],
+  "editor": "numerical activation-difference estimator \u2014 no LLM; direction estimated from MLP activations",
+  "tools": [
+    "torch",
+    "transformers",
+    "numpy"
+  ],
+  "attempts_used": 3,
+  "attempts": [
+    {
+      "variant": 1,
+      "alpha_multiplier": 1.0,
+      "alphas": {
+        "0": 0.35294117647058826,
+        "1": 0.11764705882352941
+      },
+      "layers": [
+        0,
+        1
+      ],
+      "columns": {
+        "0": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "1": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ]
+      },
+      "weights_changed": 256,
+      "weights_changed_pct": 0.025599999999999998,
+      "gate_by_temperature": {
+        "0.0": {
+          "passed": false,
+          "primary": "failing",
+          "primary_gain_points": 0.0,
+          "regressions_points": {
+            "good": 0.0,
+            "neighbours": 0.0
+          },
+          "min_gain_points": 5.0,
+          "max_regress_points": 2.0
+        }
+      },
+      "scores_by_temperature": {
+        "0.0": {
+          "failing": 47.5,
+          "good": 100.0,
+          "neighbours": 100.0
+        }
+      },
+      "evaluated_temperatures": [
+        0.0
+      ],
+      "passed": false
+    },
+    {
+      "variant": 2,
+      "alpha_multiplier": 2.0,
+      "alphas": {
+        "0": 0.7058823529411765,
+        "1": 0.23529411764705882
+      },
+      "layers": [
+        0,
+        1
+      ],
+      "columns": {
+        "0": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "1": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ]
+      },
+      "weights_changed": 256,
+      "weights_changed_pct": 0.025599999999999998,
+      "gate_by_temperature": {
+        "0.0": {
+          "passed": false,
+          "primary": "failing",
+          "primary_gain_points": 0.0,
+          "regressions_points": {
+            "good": 0.0,
+            "neighbours": 0.0
+          },
+          "min_gain_points": 5.0,
+          "max_regress_points": 2.0
+        }
+      },
+      "scores_by_temperature": {
+        "0.0": {
+          "failing": 47.5,
+          "good": 100.0,
+          "neighbours": 100.0
+        }
+      },
+      "evaluated_temperatures": [
+        0.0
+      ],
+      "passed": false
+    },
+    {
+      "variant": 3,
+      "alpha_multiplier": 1.0,
+      "alphas": {
+        "0": 0.35294117647058826
+      },
+      "layers": [
+        0
+      ],
+      "columns": {
+        "0": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ]
+      },
+      "weights_changed": 128,
+      "weights_changed_pct": 0.012799999999999999,
+      "gate_by_temperature": {
+        "0.0": {
+          "passed": false,
+          "primary": "failing",
+          "primary_gain_points": 0.0,
+          "regressions_points": {
+            "good": 0.0,
+            "neighbours": 0.0
+          },
+          "min_gain_points": 5.0,
+          "max_regress_points": 2.0
+        }
+      },
+      "scores_by_temperature": {
+        "0.0": {
+          "failing": 47.5,
+          "good": 100.0,
+          "neighbours": 100.0
+        }
+      },
+      "evaluated_temperatures": [
+        0.0
+      ],
+      "passed": false
+    }
+  ],
+  "real_demo": {
+    "model_id": "fake-model",
+    "device": "cpu",
+    "total_params": 1000000,
+    "eval_name": "golden-v1",
+    "eval_file": "eval.json",
+    "temperature_sweep_subset": {
+      "0.0": 30.0,
+      "0.7": 30.0,
+      "1.0": 30.0,
+      "1.5": 30.0
+    },
+    "causal_proof": {
+      "failing_subset_before": 30.0,
+      "failing_subset_after_ablation": 70.0,
+      "change_points": 40.0
+    },
+    "attempt_ranking": [
+      {
+        "index": 2,
+        "attempt": 3,
+        "passed": false,
+        "distance_points": 5.0,
+        "primary_gain_serving": null,
+        "weights_changed": 128,
+        "evaluated_temperatures": [
+          0.0
+        ]
+      },
+      {
+        "index": 0,
+        "attempt": 1,
+        "passed": false,
+        "distance_points": 5.0,
+        "primary_gain_serving": null,
+        "weights_changed": 256,
+        "evaluated_temperatures": [
+          0.0
+        ]
+      },
+      {
+        "index": 1,
+        "attempt": 2,
+        "passed": false,
+        "distance_points": 5.0,
+        "primary_gain_serving": null,
+        "weights_changed": 256,
+        "evaluated_temperatures": [
+          0.0
+        ]
+      }
+    ],
+    "best_attempt": {
+      "index": 2,
+      "attempt": 3,
+      "passed": false,
+      "distance_points": 5.0,
+      "primary_gain_serving": null,
+      "weights_changed": 128,
+      "evaluated_temperatures": [
+        0.0
+      ]
+    },
+    "suggestions": [
+      "The diagnosed direction did not move the failure enough. Try a narrower failing set (one failure type, not mixed), more columns, or another layer \u2014 or accept that this failure is not a single-direction obstacle (MIT's Gemma control failed the same way).",
+      "No weights were shipped. Re-run with a revised eval file; the gate decides."
+    ],
+    "diagnosis_contrast": "neighbours",
+    "diagnosis": {
+      "layers": [
+        {
+          "index": 0,
+          "down_proj_name": "down_proj",
+          "direction_norm": 3.0,
+          "columns": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ]
+        },
+        {
+          "index": 1,
+          "down_proj_name": "down_proj",
+          "direction_norm": 1.0,
+          "columns": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ]
+        }
+      ]
+    }
+  }
+}

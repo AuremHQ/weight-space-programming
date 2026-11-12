@@ -13,7 +13,7 @@ import unittest
 import urllib.request
 from http.server import ThreadingHTTPServer
 
-from wsp import serve_model
+from wsp import recipe, serve_model
 
 
 class FakeModel:
@@ -22,6 +22,12 @@ class FakeModel:
     def __init__(self):
         self.applied = []   # (layer_index, columns, alpha)
         self.restored = []  # saved handles
+        # Layer shape the fixtures use: hidden 3, intermediate 16.
+        self.layer_infos = [
+            {"index": 27, "hidden_size": 3, "intermediate_size": 16},
+            {"index": 26, "hidden_size": 3, "intermediate_size": 16},
+        ]
+        self.total_params = 1_000_000
 
     def apply_edit(self, layer_index, columns, direction, alpha):
         self.applied.append((layer_index, list(columns), alpha))
@@ -36,7 +42,7 @@ class FakeModel:
 
 def _write_edit(run_dir, model_id="Qwen/Qwen3-0.6B", layers=None):
     os.makedirs(run_dir, exist_ok=True)
-    recipe = {
+    recipe_dict = {
         "format_version": 1,
         "model_id": model_id,
         "dtype": "bfloat16",
@@ -47,9 +53,19 @@ def _write_edit(run_dir, model_id="Qwen/Qwen3-0.6B", layers=None):
              "direction": [0.4, 0.5, 0.6], "alpha": 0.25},
         ],
     }
-    with open(os.path.join(run_dir, "edit.json"), "w") as f:
-        json.dump(recipe, f)
-    return recipe
+    recipe.write_recipe(os.path.join(run_dir, "edit.json"), recipe_dict)
+    # A matching report.json: the gate pass this edit claims. The
+    # fixture edit is a SHIP-level pass, so serve-model applies it
+    # with default flags.
+    with open(os.path.join(run_dir, "report.json"), "w") as f:
+        json.dump({
+            "gate": {"passed": True, "verdict": "SHIP"},
+            "real_demo": {
+                "edit_sha256": recipe.edit_sha256(recipe_dict),
+                "model_id": model_id,
+            },
+        }, f)
+    return recipe_dict
 
 
 def _write_latest(versions_dir, version, run_dir):
@@ -80,9 +96,9 @@ class TestApplyRecipe(unittest.TestCase):
         model = FakeModel()
         recipe = {"format_version": 1, "model_id": "m", "layers": [
             {"index": 27, "columns": [3, 4],
-             "direction": [0.1, 0.2], "alpha": 0.25},
+             "direction": [0.1, 0.2, 0.3], "alpha": 0.25},
             {"index": 26, "columns": [7],
-             "direction": [0.4], "alpha": 0.5},
+             "direction": [0.4, 0.5, 0.6], "alpha": 0.5},
         ]}
         changed, saved = serve_model.apply_recipe(model, recipe)
         self.assertEqual(changed, 30)  # 2 cols + 1 col, x10 each
@@ -102,9 +118,9 @@ class TestApplyRecipe(unittest.TestCase):
         model = FailingModel()
         recipe = {"format_version": 1, "model_id": "m", "layers": [
             {"index": 27, "columns": [3],
-             "direction": [0.1], "alpha": 0.25},
+             "direction": [0.1, 0.2, 0.3], "alpha": 0.25},
             {"index": 26, "columns": [7],
-             "direction": [0.4], "alpha": 0.5},
+             "direction": [0.4, 0.5, 0.6], "alpha": 0.5},
         ]}
         with self.assertRaises(ValueError):
             serve_model.apply_recipe(model, recipe)

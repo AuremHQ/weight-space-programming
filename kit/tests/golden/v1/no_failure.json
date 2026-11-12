@@ -1,0 +1,49 @@
+{
+  "report_version": 1,
+  "model": "fake-model (real open-weight model, CPU)",
+  "edited_row": null,
+  "weights_changed": 0,
+  "weights_changed_pct": 0.0,
+  "before": {
+    "failing": 95.625,
+    "good": 100.0,
+    "neighbours": 100.0
+  },
+  "after": {
+    "failing": 95.625,
+    "good": 100.0,
+    "neighbours": 100.0
+  },
+  "gate": {
+    "passed": false,
+    "reason": "no failure measured: failing set 95.62 is within 5.0 points of the good set 100.00 at serving temperature \u2014 nothing to fix, no edit made"
+  },
+  "temperatures_checked": [
+    0.0,
+    0.7,
+    1.0,
+    1.5
+  ],
+  "editor": "numerical activation-difference estimator \u2014 no LLM; direction estimated from MLP activations",
+  "tools": [
+    "torch",
+    "transformers",
+    "numpy"
+  ],
+  "attempts_used": 0,
+  "attempts": [],
+  "real_demo": {
+    "model_id": "fake-model",
+    "device": "cpu",
+    "total_params": 1000000,
+    "eval_name": "golden-v1",
+    "eval_file": "eval.json",
+    "temperature_sweep_subset": {
+      "0.0": 94.16666666666667,
+      "0.7": 94.16666666666667,
+      "1.0": 94.16666666666667,
+      "1.5": 94.16666666666667
+    },
+    "failure_gap_points": 4.375
+  }
+}

@@ -1,0 +1,408 @@
+{
+  "report_version": 1,
+  "model": "fake-model (real open-weight model, bfloat16, CPU)",
+  "edited_row": 0,
+  "weights_changed": 256,
+  "weights_changed_pct": 0.025599999999999998,
+  "before": {
+    "failing": 47.5,
+    "good": 100.0,
+    "neighbours": 100.0
+  },
+  "after": {
+    "failing": 100.0,
+    "good": 100.0,
+    "neighbours": 100.0
+  },
+  "gate": {
+    "passed": true,
+    "by_temperature": {
+      "0.0": {
+        "passed": true,
+        "primary": "failing",
+        "primary_gain_points": 52.5,
+        "regressions_points": {
+          "good": 0.0,
+          "neighbours": 0.0
+        },
+        "min_gain_points": 5.0,
+        "max_regress_points": 2.0
+      },
+      "0.7": {
+        "passed": true,
+        "primary": "failing",
+        "primary_gain_points": 52.5,
+        "regressions_points": {
+          "good": 0.0,
+          "neighbours": 0.0
+        },
+        "min_gain_points": 5.0,
+        "max_regress_points": 2.0
+      }
+    }
+  },
+  "temperatures_checked": [
+    0.0,
+    0.7,
+    1.0,
+    1.5
+  ],
+  "editor": "numerical activation-difference estimator \u2014 no LLM; direction estimated from MLP activations",
+  "tools": [
+    "torch",
+    "transformers",
+    "numpy"
+  ],
+  "attempts_used": 3,
+  "attempts": [
+    {
+      "variant": 1,
+      "alpha_multiplier": 1.0,
+      "alphas": {
+        "0": 0.35294117647058826,
+        "1": 0.11764705882352941
+      },
+      "layers": [
+        0,
+        1
+      ],
+      "columns": {
+        "0": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "1": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ]
+      },
+      "weights_changed": 256,
+      "weights_changed_pct": 0.025599999999999998,
+      "gate_by_temperature": {
+        "0.0": {
+          "passed": true,
+          "primary": "failing",
+          "primary_gain_points": 52.5,
+          "regressions_points": {
+            "good": 0.0,
+            "neighbours": 0.0
+          },
+          "min_gain_points": 5.0,
+          "max_regress_points": 2.0
+        },
+        "0.7": {
+          "passed": true,
+          "primary": "failing",
+          "primary_gain_points": 52.5,
+          "regressions_points": {
+            "good": 0.0,
+            "neighbours": 0.0
+          },
+          "min_gain_points": 5.0,
+          "max_regress_points": 2.0
+        }
+      },
+      "scores_by_temperature": {
+        "0.0": {
+          "failing": 100.0,
+          "good": 100.0,
+          "neighbours": 100.0
+        },
+        "0.7": {
+          "failing": 100.0,
+          "good": 100.0,
+          "neighbours": 100.0
+        }
+      },
+      "evaluated_temperatures": [
+        0.0,
+        0.7
+      ],
+      "passed": true
+    },
+    {
+      "variant": 2,
+      "alpha_multiplier": 2.0,
+      "alphas": {
+        "0": 0.7058823529411765,
+        "1": 0.23529411764705882
+      },
+      "layers": [
+        0,
+        1
+      ],
+      "columns": {
+        "0": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "1": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ]
+      },
+      "weights_changed": 256,
+      "weights_changed_pct": 0.025599999999999998,
+      "gate_by_temperature": {
+        "0.0": {
+          "passed": true,
+          "primary": "failing",
+          "primary_gain_points": 52.5,
+          "regressions_points": {
+            "good": 0.0,
+            "neighbours": 0.0
+          },
+          "min_gain_points": 5.0,
+          "max_regress_points": 2.0
+        },
+        "0.7": {
+          "passed": true,
+          "primary": "failing",
+          "primary_gain_points": 52.5,
+          "regressions_points": {
+            "good": 0.0,
+            "neighbours": 0.0
+          },
+          "min_gain_points": 5.0,
+          "max_regress_points": 2.0
+        }
+      },
+      "scores_by_temperature": {
+        "0.0": {
+          "failing": 100.0,
+          "good": 100.0,
+          "neighbours": 100.0
+        },
+        "0.7": {
+          "failing": 100.0,
+          "good": 100.0,
+          "neighbours": 100.0
+        }
+      },
+      "evaluated_temperatures": [
+        0.0,
+        0.7
+      ],
+      "passed": true
+    },
+    {
+      "variant": 3,
+      "alpha_multiplier": 1.0,
+      "alphas": {
+        "0": 0.35294117647058826
+      },
+      "layers": [
+        0
+      ],
+      "columns": {
+        "0": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ]
+      },
+      "weights_changed": 128,
+      "weights_changed_pct": 0.012799999999999999,
+      "gate_by_temperature": {
+        "0.0": {
+          "passed": true,
+          "primary": "failing",
+          "primary_gain_points": 37.5,
+          "regressions_points": {
+            "good": 0.0,
+            "neighbours": 0.0
+          },
+          "min_gain_points": 5.0,
+          "max_regress_points": 2.0
+        },
+        "0.7": {
+          "passed": true,
+          "primary": "failing",
+          "primary_gain_points": 37.5,
+          "regressions_points": {
+            "good": 0.0,
+            "neighbours": 0.0
+          },
+          "min_gain_points": 5.0,
+          "max_regress_points": 2.0
+        }
+      },
+      "scores_by_temperature": {
+        "0.0": {
+          "failing": 85.0,
+          "good": 100.0,
+          "neighbours": 100.0
+        },
+        "0.7": {
+          "failing": 85.0,
+          "good": 100.0,
+          "neighbours": 100.0
+        }
+      },
+      "evaluated_temperatures": [
+        0.0,
+        0.7
+      ],
+      "passed": true
+    }
+  ],
+  "real_demo": {
+    "model_id": "fake-model",
+    "dtype": "bfloat16",
+    "device": "cpu",
+    "total_params": 1000000,
+    "layers": [
+      {
+        "index": 0,
+        "down_proj_name": "down_proj",
+        "hidden_size": 8,
+        "intermediate_size": 16,
+        "columns": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "direction_norm": 3.0,
+        "alpha": 0.35294117647058826
+      },
+      {
+        "index": 1,
+        "down_proj_name": "down_proj",
+        "hidden_size": 8,
+        "intermediate_size": 16,
+        "columns": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "direction_norm": 1.0,
+        "alpha": 0.11764705882352941
+      }
+    ],
+    "eval_name": "golden-v1",
+    "eval_file": "eval.json",
+    "max_new_tokens": 64,
+    "samples_per_prompt": 1,
+    "seed": 0,
+    "thinking": false,
+    "use_chat_template": true,
+    "gate_temperatures": [
+      0.7,
+      0.0
+    ],
+    "serving_temperature": 0.7,
+    "diagnosis_contrast": "neighbours",
+    "temperature_sweep_subset": {
+      "0.0": 30.0,
+      "0.7": 30.0,
+      "1.0": 30.0,
+      "1.5": 30.0
+    },
+    "good_subset_serving": 100.0,
+    "causal_proof": {
+      "failing_subset_before": 30.0,
+      "failing_subset_after_ablation": 0.0,
+      "change_points": -30.0
+    },
+    "samples": {
+      "prompt": "List 60 different animals, one per line.",
+      "before": "1. Animal 1\n2. Animal 2\n3. Animal 3\n4. Animal 4\n5. Animal 5\n6. Animal 6\n7. Animal 7\n8. Animal 8\n9. Animal 9\n10. Animal 10\n11. Animal 11\n12. Animal 12\n13. Animal 13\n14. Animal 14\n15. Animal 15\n16. Animal 16\n17. Animal 17\n18. Animal 18\n",
+      "after": "1. Animal 1\n2. Animal 2\n3. Animal 3\n4. Animal 4\n5. Animal 5\n6. Animal 6\n7. Animal 7\n8. Animal 8\n9. Animal 9\n10. Animal 10\n11. Animal 11\n12. Animal 12\n13. Animal 13\n14. Animal 14\n15. Animal 15\n16. Animal 16\n17. Animal 17\n18. Animal 18\n19. Animal 19\n20. Animal 20\n21. Animal 21\n22. Animal 22\n23. Animal 23\n24. Animal 24\n25. Animal 25\n26. Animal 26\n27. Animal 27\n28. Animal 28\n29. Animal 29\n30. Animal 30\n31. Animal 31\n32. Animal 32\n33. Animal 33\n34. Animal 34\n35. Animal 35\n36. Animal 36\n37. Animal 37\n"
+    }
+  }
+}

@@ -16,8 +16,10 @@ def _report_note(gate):
     """Honest note: the canned 'passed' wording must never appear on
     a failed gate. Pass path keeps the original wording; fail path
     states nothing shipped and why (the gate reason)."""
-    base = ("Weight-space editing was demonstrated with GPT-6 Astra "
-            "and is unproven for other models. ")
+    base = ("Background: the LLM-editor method was demonstrated "
+            "by MIT with GPT-6 Astra; blog post, not peer reviewed. "
+            "Editor of THIS edit: the kit's numerical estimator "
+            "(no LLM). ")
     if gate.get("passed"):
         return (base + "This edit passed the eval gate above; verify "
                 "independently before use.")

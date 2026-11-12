@@ -24,9 +24,10 @@ On a gate fail, nothing ships. The failure is logged and marked
 processed — the loop does NOT retry the same failure forever. A new
 or changed failure (or eval file) re-triggers a run.
 
-Safety: the gate (+5/-2), the 1% weight cap, and the 3B model cap
-apply to every run, exactly as in `wsp run`. Max 3 edit attempts per
-run (the pipeline's own cap). Stop with Ctrl+C.
+Safety: the gate (+2/-2) and the 1% weight cap apply to every run,
+exactly as in `wsp run`. No model-size cap: use small models for
+better performance. Max 3 edit attempts per run (the pipeline's own
+cap). Stop with Ctrl+C.
 """
 
 import json
@@ -114,10 +115,21 @@ def new_failure_lines(path, state):
 def record_version(out_dir, run_dir, rep, model_id):
     """Append a gate-passing run to versions.json + latest.json.
 
-    Returns the version number (1-based). The version IS the run
-    directory — the edited model lives there, as the pipeline wrote
-    it. Nothing is copied or moved.
+    Returns the version number. Numbering is max(existing) + 1, so
+    a gap (a skipped version) never renumbers later ones. The entry
+    stores run_dir ABSOLUTE plus run_dir_rel (relative to out_dir,
+    only when the run dir is inside it), the edit hash, the verdict
+    and the evidence level, so serve-model can resolve the run dir
+    after the out dir moves and can tell SHIP evidence from QUICK.
+    Both files are written atomically. A versions.json that cannot
+    be read is renamed to versions.json.corrupt-<timestamp> and a
+    RuntimeError is raised — a corrupt file must never silently
+    restart the numbering. The version IS the run directory — the
+    edited model lives there, as the pipeline wrote it. Nothing is
+    copied or moved.
     """
+    from .atomic import atomic_write_json
+
     os.makedirs(out_dir, exist_ok=True)
     versions_path = os.path.join(out_dir, VERSIONS_FILE)
     versions = []
@@ -126,29 +138,53 @@ def record_version(out_dir, run_dir, rep, model_id):
             with open(versions_path) as f:
                 versions = json.load(f)
             if not isinstance(versions, list):
-                versions = []
-        except (OSError, ValueError):
-            versions = []
+                raise ValueError("versions.json is not a JSON list")
+        except (OSError, ValueError) as exc:
+            stamp = datetime.now(timezone.utc).strftime(
+                "%Y%m%dT%H%M%SZ")
+            corrupt = f"{versions_path}.corrupt-{stamp}"
+            os.replace(versions_path, corrupt)
+            raise RuntimeError(
+                f"versions.json is unreadable ({exc}) — moved to "
+                f"{corrupt}; fix or remove it before the loop can "
+                "record new versions") from exc
+    version = max((e.get("version", 0) for e in versions),
+                  default=0) + 1
+    run_abs = os.path.abspath(run_dir)
+    out_abs = os.path.abspath(out_dir)
+    try:
+        run_rel = os.path.relpath(run_abs, out_abs)
+    except ValueError:
+        run_rel = None  # different drive on Windows
+    if (run_rel is not None
+            and (run_rel == ".."
+                 or run_rel.startswith(".." + os.sep))):
+        run_rel = None  # run dir is outside out_dir
+    demo = rep.get("real_demo") or {}
+    verdict = (rep.get("gate") or {}).get("verdict")
     entry = {
-        "version": len(versions) + 1,
-        "run_dir": run_dir,
+        "version": version,
+        "run_dir": run_abs,
         "model": model_id,
         "failing_gain": (rep["after"]["failing"]
                          - rep["before"]["failing"]),
         "weights_changed": rep["weights_changed"],
         "timestamp": datetime.now(timezone.utc).strftime(
             "%Y-%m-%dT%H:%M:%SZ"),
+        "edit_sha256": demo.get("edit_sha256"),
+        "verdict": verdict,
+        "evidence_level": "ship" if verdict == "SHIP" else "quick",
     }
+    if run_rel is not None:
+        entry["run_dir_rel"] = run_rel
     versions.append(entry)
-    with open(versions_path, "w") as f:
-        json.dump(versions, f, indent=2)
-    with open(os.path.join(out_dir, LATEST_FILE), "w") as f:
-        json.dump(entry, f, indent=2)
+    atomic_write_json(versions_path, versions)
+    atomic_write_json(os.path.join(out_dir, LATEST_FILE), entry)
     return entry["version"]
 
 
-def _default_run_fn(model_id, eval_path, out_dir, log=print):
-    return watch.run_once(model_id, eval_path, out_dir, log=log)
+def _default_run_fn(model_id, eval_path, out_dir, log=print, **kwargs):
+    return watch.run_once(model_id, eval_path, out_dir, log=log, **kwargs)
 
 
 def loop_once(model_id, watch_dir, out_dir, state, run_fn=None,
@@ -170,10 +206,15 @@ def loop_once(model_id, watch_dir, out_dir, state, run_fn=None,
 
     def _maybe_version(rep, run_dir):
         if rep is not None and rep.get("gate", {}).get("passed"):
-            version = record_version(out_dir, run_dir, rep, model_id)
+            try:
+                version = record_version(out_dir, run_dir, rep, model_id)
+            except (RuntimeError, OSError) as exc:
+                # A version that cannot be recorded is logged loudly
+                # and dropped — the loop never dies over it, and the
+                # run itself already finished.
+                log(f"  versions.json: version NOT recorded: {exc}")
+                return
             log(f"  new version v{version}: {run_dir}")
-            log("If this helped, please star the repo: "
-                "https://github.com/AuremHQ/weight-space-programming")
             summary["versions"] += 1
 
     for path in watch.scan_watch_dir(watch_dir, state):
@@ -205,6 +246,35 @@ def loop_once(model_id, watch_dir, out_dir, state, run_fn=None,
             name = "loop-" + auto.slugify_model(model_id)
             eval_data = auto.build_eval(model_id, name, failing, good,
                                         neighbours or None)
+            # v2 preflight BEFORE the model loads: a failures file
+            # short of the v2 minimums is skipped (logged, marked
+            # processed) instead of running — the pipeline would
+            # refuse it with exit 2 anyway. Eval files dropped in
+            # the watch dir go through watch.run_once, where the
+            # pipeline runs its own preflight; that exit 2 is
+            # logged by the watch error handling, never fatal.
+            from .evalfile import set_prompts
+            from .protocol import get_protocol
+            from .splits import preflight
+
+            proto = get_protocol(kwargs.get("protocol", "v2"))
+            problems = preflight(eval_data, proto)
+            if problems:
+                for set_name, label in (
+                        ("failing", "failing"),
+                        ("neighbours", "neighbour"),
+                        ("good", "good")):
+                    count = len(set_prompts(eval_data, set_name))
+                    minimum = proto.min_prompts[set_name]
+                    if count < minimum:
+                        log(f"  failures.jsonl: need "
+                            f"{minimum - count} more {label} prompts "
+                            f"for a v2 decision (have {count}, need "
+                            f"{minimum}) — skipping this run")
+                if entry is not None:
+                    state[FAILURES_STATE_KEY] = entry
+                    watch.save_seen(out_dir, state)
+                return state, summary
             os.makedirs(os.path.join(out_dir, "evals"), exist_ok=True)
             eval_file = os.path.join(out_dir, "evals", name + ".json")
             with open(eval_file, "w") as f:

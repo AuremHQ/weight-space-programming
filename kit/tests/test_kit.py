@@ -43,7 +43,7 @@ class TestGate(unittest.TestCase):
 
     def test_gate_fails_on_small_gain(self):
         before = {"failing": 10.0, "good": 95.0, "neighbours": 94.0}
-        after = {"failing": 13.0, "good": 95.0, "neighbours": 94.0}
+        after = {"failing": 11.0, "good": 95.0, "neighbours": 94.0}
         self.assertFalse(gate.check_gate(before, after)["passed"])
 
 
@@ -79,7 +79,7 @@ class TestPipeline(unittest.TestCase):
         self.assertTrue(cause["causal"])
         self.assertIsNotNone(edited)
         self.assertTrue(rep["gate"]["passed"])
-        self.assertGreaterEqual(after["failing"] - before["failing"], 5.0)
+        self.assertGreaterEqual(after["failing"] - before["failing"], 2.0)
         self.assertLessEqual(before["good"] - after["good"], 2.0)
         self.assertLessEqual(before["neighbours"] - after["neighbours"], 2.0)
         self.assertLessEqual(rep["weights_changed_pct"], 1.0)

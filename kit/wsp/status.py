@@ -76,6 +76,21 @@ def _short_model(model):
     return model.split(" (")[0].strip() or "unknown model"
 
 
+def verdict_label(verdict):
+    """The plain-English label for a gate verdict (W3.8).
+
+    SHIP is standard evidence; QUICK_PASS — and legacy reports with
+    no verdict at all — are a quick check, not evidence. Anything
+    else (REJECT, QUICK_FAIL, INCONCLUSIVE) is not a pass, so it has
+    no label here: it never reaches a win card.
+    """
+    if verdict == "SHIP":
+        return "Approved (standard evidence)"
+    if verdict in ("QUICK_PASS", None):
+        return "Quick check passed (not evidence)"
+    return None
+
+
 def parse_win(rep, path):
     """A gate-passing report as a win card, else None.
 
@@ -114,6 +129,8 @@ def parse_win(rep, path):
         "short": short,
         "model": model,
         "is_real": is_real,
+        "verdict": (rep.get("gate") or {}).get("verdict"),
+        "verdict_label": verdict_label((rep.get("gate") or {}).get("verdict")),
         "failing_before": before,
         "failing_after": after,
         "gain": after - before,
@@ -167,6 +184,18 @@ def scan_reports(runs_dir="."):
             wins.append(win)
     wins.sort(key=lambda w: w["mtime"], reverse=True)
     causal = [r["causal"] for r in reports if r["causal"] is not None]
+    # Verdict counts (W2.13): approved = SHIP (standard evidence);
+    # quick passes = gate passed with a QUICK_PASS verdict or no
+    # verdict at all (legacy v1 reports); refused = everything else
+    # (REJECT, QUICK_FAIL, INCONCLUSIVE — nothing shipped).
+    approved = sum(
+        1 for r in reports
+        if (r["rep"].get("gate") or {}).get("verdict") == "SHIP")
+    quick_passes = sum(
+        1 for r in reports
+        if r["passed"] and (r["rep"].get("gate") or {}).get("verdict")
+        in ("QUICK_PASS", None))
+    total = len(reports)
     return {
         "wins": wins,
         "reports": reports,
@@ -174,6 +203,10 @@ def scan_reports(runs_dir="."):
         "best_causal_proof": max(causal) if causal else None,
         "real_runs": sum(1 for r in reports if r["is_real"]),
         "real_passes": sum(1 for w in wins if w["is_real"]),
+        "approved": approved,
+        "quick_passes": quick_passes,
+        "refused": total - approved - quick_passes,
+        "total": total,
     }
 
 
@@ -246,28 +279,38 @@ def chip_state(scan):
     return "IDLE"
 
 
+def _denominator_text(scan):
+    """'{A} Approved (standard evidence), {M} Quick check passed (not
+    evidence), {K} refused of {T} runs found here' — the honest
+    denominator the line and the page share, in the verdict wording
+    (W3.8)."""
+    quick = scan["quick_passes"]
+    return (f"{scan['approved']} Approved (standard evidence), "
+            f"{quick} Quick check passed (not evidence), "
+            f"{scan['refused']} refused of "
+            f"{scan['total']} runs found here")
+
+
 def status_line(runs_dir="."):
-    """The one-liner `wsp status` prints. Green-only and factual."""
+    """The one-liner `wsp status` prints. Green-only and factual.
+
+    The denominator names every run: approved (SHIP, standard
+    evidence), quick passes (gate passed, QUICK evidence or legacy
+    v1), refused (nothing shipped). The best gain is shown when a
+    win exists; with runs but no wins, the line says so plainly.
+    """
     scan = scan_reports(runs_dir)
     chip = chip_state(scan)
+    if scan["total"] == 0:
+        return f"wsp-kit by Aurem \u25cf {chip} \u2014 no runs found yet"
+    denom = _denominator_text(scan)
     wins = scan["wins"]
-    if not wins:
-        n = len(scan["reports"])
-        if n == 0:
-            return f"wsp-kit by Aurem \u25cf {chip} \u2014 no runs found yet"
-        plural = "s" if n != 1 else ""
-        return (f"wsp-kit by Aurem \u25cf {chip} \u2014 no approved improvements yet "
-                f"\u00b7 {n} run{plural} completed")
-    best = max(wins, key=lambda w: w["gain"])
-    n = len(wins)
-    plural = "s" if n != 1 else ""
-    real = scan["real_passes"]
-    real_part = (f"{real} real-model pass"
-                 + ("es" if real != 1 else "")
-                 + (" yet" if real == 0 else ""))
-    return (f"wsp-kit by Aurem \u25cf {chip} \u2014 {n} approved improvement{plural} "
-            f"\u00b7 best +{best['gain']:.2f} ({best['short']}) "
-            f"\u00b7 {real_part}")
+    if wins:
+        best = max(wins, key=lambda w: w["gain"])
+        return (f"wsp-kit by Aurem \u25cf {chip} \u2014 {denom} "
+                f"\u00b7 best +{best['gain']:.2f} ({best['short']})")
+    return (f"wsp-kit by Aurem \u25cf {chip} \u2014 {denom} "
+            f"\u00b7 no approved improvements yet")
 
 
 # ---------------------------------------------------------------- page
@@ -288,10 +331,11 @@ def _win_card(win):
     temps = ""
     if win["gate_temps"]:
         temps = "Gate passed at " + ", ".join(f"{t:g}" for t in win["gate_temps"])
+    label = win.get("verdict_label") or "Quick check passed (not evidence)"
     return f"""<div class="card">
       <div class="card-top"><h3>{html.escape(win["name"])}</h3>
       <span class="pill">&#10003; Gate passed</span></div>
-      <div class="meta">{html.escape(win["model"])} &middot; {html.escape(win["date"])}</div>
+      <div class="meta">{html.escape(win["model"])} &middot; {html.escape(win["date"])} &middot; {html.escape(label)}</div>
       <div class="scores">Failing {win["failing_before"]:.2f} &rarr; <b>{win["failing_after"]:.2f}</b></div>
       <div class="gain">+{win["gain"]:.2f} points</div>
       <div class="meta">{win["weights_changed"]:,} weights ({win["weights_changed_pct"]:.2f}%) &middot; {html.escape(temps)}</div>
@@ -372,6 +416,7 @@ header .ver {{ color: #94a3b8; font-size: 13px; }}
 .hero .count {{ font-size: 64px; font-weight: 800; color: #f5c542; line-height: 1; }}
 .hero .label {{ font-size: 15px; color: #e2e8f0; margin-top: 6px; }}
 .hero .best {{ color: #4ade80; font-weight: 700; font-size: 17px; margin-top: 10px; }}
+.hero .denom {{ color: #cbd5e1; font-size: 14px; margin-top: 10px; }}
 .section {{ margin-top: 22px; }}
 .section h2 {{ font-size: 16px; margin: 0 0 4px; color: #f5c542; }}
 .card {{ background: #fff; color: #0f172a; border-radius: 14px; padding: 16px; margin-top: 12px; border-left: 6px solid #7c3aed; }}
@@ -400,6 +445,7 @@ footer a {{ color: #4ade80; }}
 <div class="count">{len(wins)}</div>
 <div class="label">Approved improvement{plural}</div>
 {hero_best}
+<div class="denom">{html.escape(_denominator_text(scan))}</div>
 </div>
 <div class="section"><h2>Approved improvements</h2>
 {cards}

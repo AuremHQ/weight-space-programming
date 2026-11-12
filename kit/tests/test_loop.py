@@ -19,7 +19,8 @@ def _write_failures(path, lines):
 
 def _passing_run(calls):
     """A fake run_fn that always passes the gate, unique run dir."""
-    def run_fn(model_id, eval_path, out_dir, log=print):
+    def run_fn(model_id, eval_path, out_dir, log=print,
+                 **kw):
         n = len(calls) + 1
         calls.append(eval_path)
         run_dir = os.path.join(out_dir, f"run-{n}")
@@ -37,7 +38,8 @@ def _passing_run(calls):
 
 def _failing_run(calls):
     """A fake run_fn that always fails the gate."""
-    def run_fn(model_id, eval_path, out_dir, log=print):
+    def run_fn(model_id, eval_path, out_dir, log=print,
+                 **kw):
         n = len(calls) + 1
         calls.append(eval_path)
         run_dir = os.path.join(out_dir, f"run-{n}")
@@ -114,7 +116,8 @@ class TestLoopOnce(unittest.TestCase):
             state, summary = loop.loop_once(
                 "Qwen/Qwen3-0.6B", watch_dir, out_dir, state,
                 run_fn=_passing_run(calls),
-                log=lambda *a: None)
+                log=lambda *a: None,
+                pipeline_kwargs={"protocol": "v1"})
             self.assertEqual(summary["failure_runs"], 1)
             self.assertEqual(summary["versions"], 1)
             self.assertEqual(len(calls), 1)
@@ -131,7 +134,8 @@ class TestLoopOnce(unittest.TestCase):
             state, summary = loop.loop_once(
                 "Qwen/Qwen3-0.6B", watch_dir, out_dir, state,
                 run_fn=_passing_run(calls),
-                log=lambda *a: None)
+                log=lambda *a: None,
+                pipeline_kwargs={"protocol": "v1"})
             self.assertEqual(summary["failure_runs"], 0)
             self.assertEqual(len(calls), 1)
 
@@ -149,13 +153,15 @@ class TestLoopOnce(unittest.TestCase):
             state = {}
             loop.loop_once("m", watch_dir, out_dir, state,
                            run_fn=_passing_run(calls),
-                           log=lambda *a: None)
+                           log=lambda *a: None,
+                           pipeline_kwargs={"protocol": "v1"})
             with open(path, "a") as f:
                 f.write(json.dumps(
                     {"prompt": "f2", "expect": "e3"}) + "\n")
             state, summary = loop.loop_once(
                 "m", watch_dir, out_dir, state,
-                run_fn=_passing_run(calls), log=lambda *a: None)
+                run_fn=_passing_run(calls), log=lambda *a: None,
+                pipeline_kwargs={"protocol": "v1"})
             self.assertEqual(summary["failure_runs"], 1)
             self.assertEqual(len(calls), 2)
             with open(os.path.join(out_dir, "latest.json")) as f:
@@ -175,53 +181,12 @@ class TestLoopOnce(unittest.TestCase):
             state = {}
             state, summary = loop.loop_once(
                 "m", watch_dir, out_dir, state,
-                run_fn=_failing_run(calls), log=lambda *a: None)
+                run_fn=_failing_run(calls), log=lambda *a: None,
+                pipeline_kwargs={"protocol": "v1"})
             self.assertEqual(summary["failure_runs"], 1)
             self.assertEqual(summary["versions"], 0)
             self.assertFalse(
                 os.path.exists(os.path.join(out_dir, "latest.json")))
-
-    def test_gate_pass_logs_star_ask(self):
-        with tempfile.TemporaryDirectory() as td:
-            watch_dir = os.path.join(td, "watch")
-            out_dir = os.path.join(td, "out")
-            os.makedirs(watch_dir)
-            _write_failures(os.path.join(watch_dir, "failures.jsonl"), [
-                {"prompt": "f1", "expect": "e1"},
-                {"prompt": "g1", "expect": "e2", "kind": "good"},
-            ])
-            lines = []
-            state = {}
-            state, summary = loop.loop_once(
-                "m", watch_dir, out_dir, state,
-                run_fn=_passing_run([]),
-                log=lambda *a: lines.append(" ".join(str(x) for x in a)))
-            self.assertEqual(summary["versions"], 1)
-            self.assertTrue(
-                any("star the repo" in ln and
-                    "github.com/AuremHQ/weight-space-programming" in ln
-                    for ln in lines),
-                "gate pass must log the star ask")
-
-    def test_gate_fail_logs_no_star_ask(self):
-        with tempfile.TemporaryDirectory() as td:
-            watch_dir = os.path.join(td, "watch")
-            out_dir = os.path.join(td, "out")
-            os.makedirs(watch_dir)
-            _write_failures(os.path.join(watch_dir, "failures.jsonl"), [
-                {"prompt": "f1", "expect": "e1"},
-                {"prompt": "g1", "expect": "e2", "kind": "good"},
-            ])
-            lines = []
-            state = {}
-            state, summary = loop.loop_once(
-                "m", watch_dir, out_dir, state,
-                run_fn=_failing_run([]),
-                log=lambda *a: lines.append(" ".join(str(x) for x in a)))
-            self.assertEqual(summary["versions"], 0)
-            self.assertFalse(
-                any("star the repo" in ln for ln in lines),
-                "gate fail must not log the star ask")
 
     def test_eval_file_in_watch_dir_runs(self):
         with tempfile.TemporaryDirectory() as td:
@@ -234,7 +199,8 @@ class TestLoopOnce(unittest.TestCase):
             state = {}
             state, summary = loop.loop_once(
                 "m", watch_dir, out_dir, state,
-                run_fn=_passing_run(calls), log=lambda *a: None)
+                run_fn=_passing_run(calls), log=lambda *a: None,
+                pipeline_kwargs={"protocol": "v1"})
             self.assertEqual(summary["eval_runs"], 1)
             self.assertEqual(summary["versions"], 1)
 
