@@ -1,0 +1,23 @@
+# Python bytecode
+__pycache__/
+*.pyc
+# Virtual environments
+.venv*/
+# Build artefacts
+build/
+*.egg-info/
+# Real-model run outputs (edited weights live here; never commit weights)
+wsp-*-out*/
+# Weight files (a run output dir can hold them; reports are JSON)
+*.safetensors
+*.bin
+*.npz
+# Keep test fixtures committable even though the patterns above match
+# them. (No binary test fixtures exist yet; these lines are the
+# standing rule for when one is added.)
+!kit/tests/**/*.safetensors
+!kit/tests/**/*.bin
+!kit/tests/**/*.npz
+# Run-state markers
+.wsp-running
+.watch-seen.json
