@@ -155,6 +155,107 @@ def distinct_score(text, expect_count):
     return 100.0 * min(distinct, expect_count) / expect_count
 
 
+# ---------------------------------------------------------------- v2
+# Strict list parsing, normalisation and valid_items (W2.11). Every
+# v1 function above stays untouched; the v2 path is selected by the
+# protocol (scorer_version "v2").
+
+import unicodedata as _unicodedata
+
+_MARKER_RE = re.compile(r"^\s*(?:\d+[.\)]|[-*\u2022])\s+(.+?)\s*$")
+_TRAILING_NOTE_RE = re.compile(r"\s*\([^)]*\)\s*$")
+
+
+def _strip_punctuation(text):
+    """Drop every Unicode punctuation character."""
+    return "".join(ch for ch in text
+                   if not _unicodedata.category(ch).startswith("P"))
+
+
+def normalize_item(text):
+    """Normal form of one list item for distinctness.
+
+    NFKC, casefold, strip punctuation, collapse spaces, drop a
+    trailing parenthetical note such as "(again)", "(repeat)" or
+    "(2)". "Penguin", "Penguin." and "Penguin (again)" all
+    normalise to "penguin".
+    """
+    item = _unicodedata.normalize("NFKC", str(text)).casefold()
+    item = _TRAILING_NOTE_RE.sub("", item.strip())
+    item = _strip_punctuation(item)
+    return " ".join(item.split())
+
+
+def parse_list_items_v2(text):
+    """Strict item lines from a list output (v2).
+
+    Marker lines are ``1.``, ``1)``, ``-``, ``*`` or bullet. If
+    any marker line exists, ONLY marker lines count. Prose lines
+    over 12 words never count. If no markers exist at all,
+    non-empty short lines count.
+    """
+    lines = [ln.strip() for ln in str(text).splitlines()]
+    marker_items = []
+    plain_items = []
+    for ln in lines:
+        if not ln:
+            continue
+        m = _MARKER_RE.match(ln)
+        if m:
+            item = m.group(1).strip()
+            if item and len(item.split()) <= 12:
+                marker_items.append(item)
+        elif len(ln.split()) <= 12:
+            plain_items.append(ln)
+    if marker_items:
+        return marker_items
+    return plain_items
+
+
+def distinct_score_v2(text, expect_count, valid_items=None):
+    """Distinct-delivery score, v2: distinct by normalised key.
+
+    Without ``valid_items`` any new string counts (the report
+    states this limit). With ``valid_items`` (a list of allowed
+    items, membership normalised too) only listed items count.
+    Stops counting once ``expect_count`` distinct items are found.
+    """
+    if not isinstance(expect_count, int) or expect_count <= 0:
+        raise ValueError("distinct scorer needs a positive 'expect_count'")
+    allowed = None
+    if valid_items is not None:
+        allowed = {normalize_item(v) for v in valid_items}
+    seen = set()
+    for item in parse_list_items_v2(text):
+        key = normalize_item(item)
+        if not key:
+            continue
+        if allowed is not None and key not in allowed:
+            continue
+        seen.add(key)
+        if len(seen) >= expect_count:
+            break
+    if not seen:
+        return 0.0
+    return 100.0 * min(len(seen), expect_count) / expect_count
+
+
+def score_text_v2(scorer, text, expect=None, finished=True,
+                  expect_items=None, expect_count=None,
+                  valid_items=None):
+    """Score one generation, v2 path. Same arguments as
+    ``score_text`` plus the prompt's optional ``valid_items``.
+    Only the ``distinct`` scorer changes (strict parsing,
+    normalisation, valid_items); every other scorer delegates to
+    the untouched v1 ``score_text``.
+    """
+    if scorer == "distinct":
+        return float(distinct_score_v2(text, expect_count,
+                                       valid_items=valid_items))
+    return float(score_text(scorer, text, expect, finished,
+                            expect_items, expect_count))
+
+
 SCORERS = {
     "loop": lambda text, expect, finished: loop_score(text),
     "contains": lambda text, expect, finished: contains_score(text, expect),

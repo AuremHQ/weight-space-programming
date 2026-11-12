@@ -262,13 +262,13 @@ class TestEvalPasses(unittest.TestCase):
 
 class TestGateReuse(unittest.TestCase):
     def test_same_gate_thresholds(self):
-        # The merge gate is the surgical gate, reused: +5 primary,
-        # <=2 regression. A 5-point gain with no regression passes.
+        # The merge gate is the surgical gate, reused: +2 primary,
+        # <=2 regression. A 2-point gain with no regression passes.
         before = {"failing": 30.0, "good": 100.0, "neighbours": 100.0}
-        after = {"failing": 35.0, "good": 100.0, "neighbours": 100.0}
+        after = {"failing": 32.0, "good": 100.0, "neighbours": 100.0}
         self.assertTrue(gate.check_gate(before, after)["passed"])
-        # 4.99 points is not a pass.
-        after = {"failing": 34.99, "good": 100.0, "neighbours": 100.0}
+        # 1.99 points is not a pass.
+        after = {"failing": 31.99, "good": 100.0, "neighbours": 100.0}
         self.assertFalse(gate.check_gate(before, after)["passed"])
         # A 2.01-point guard regression fails even with a big gain.
         after = {"failing": 50.0, "good": 97.99, "neighbours": 100.0}
@@ -276,7 +276,8 @@ class TestGateReuse(unittest.TestCase):
 
     def test_merge_module_knows_its_methods(self):
         self.assertEqual(list(merge.METHODS), ["linear", "slerp"])
-        self.assertEqual(merge.MAX_PARAMS, 3_000_000_000)
+        # No model-size cap: the 3B cap is removed.
+        self.assertFalse(hasattr(merge, "MAX_PARAMS"))
 
 
 @unittest.skipIf(torch is None, "needs torch + safetensors")

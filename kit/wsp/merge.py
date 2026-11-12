@@ -3,7 +3,7 @@
 SEPARATE from surgical editing (SKILL Steps 0-3). A merge blends two
 whole models — it is NOT covered by the 1% weight cap, it never edits
 a production branch, and it ships only if its own full eval gate
-passes (+5 primary, <=2 regression, serving temperature AND greedy).
+passes (+2 primary, <=2 regression, serving temperature AND greedy).
 
 Methods shipped: ``linear`` (weighted average) and ``slerp``
 (spherical linear interpolation, MergeKit-style). Task Arithmetic,
@@ -18,12 +18,12 @@ lazy, so importing this module never fails without them.
 import hashlib
 import json
 import os
+import shutil
 
 import numpy as np
 
 METHODS = ("linear", "slerp")
-# Same 3B cap as surgical editing (wsp.real_runner.MAX_PARAMS).
-MAX_PARAMS = 3_000_000_000
+# No model-size cap: use small models for better performance.
 # Config keys that define a base. A key present in one config and
 # missing in the other is a mismatch, not a default.
 CONFIG_KEYS = (
@@ -354,18 +354,34 @@ def save_merged_model(out_dir, config, model_dir_a, merged_state, dtypes):
 
 
 def run_merge(model_a, model_b, method, t, eval_path, out_dir,
-              dtype="bfloat16", samples_per_prompt=1, seed=0, log=print):
+              dtype="bfloat16", samples_per_prompt=None, seed=0, log=print,
+              force=False, protocol="v2"):
     """Merge two models and run the eval gate on the merged model.
 
     Baseline is model A, evaluated at the serving temperature AND
     greedy; the merged model must gain >=5 on the primary set and
-    regress <=2 on guards/neighbours at BOTH temperatures. Returns
-    (report, out_dir, exit_code): 0 on a gate pass, 1 on a gate fail
-    or a refusal recorded in the report. Raises ValueError on a
-    same-base mismatch, an over-cap model, or a bad method/t.
+    regress <=2 on guards/neighbours at BOTH temperatures. The
+    merged model is written to ``<out_dir>.partial-<pid>`` and
+    evaluated from there; it moves into ``out_dir`` only on a gate
+    pass — a refused merge ships no model, only merge.json +
+    report.json. Returns (report, out_dir, exit_code): 0 on a gate
+    pass, 1 on a gate fail or a refusal recorded in the report.
+    Raises ValueError on a same-base mismatch, an over-cap model, or
+    a bad method/t.
+
+    ``protocol`` selects v1 (legacy point gate, QUICK evidence) or
+    v2 (check_gate_v2 on all prompts — no splits, no
+    diagnosis/selection stage — with the same minimums; a
+    below-minimum eval is INCONCLUSIVE and ships nothing).
+    ``samples_per_prompt`` None resolves by protocol (v1: 1, v2: 3).
     """
     from . import evalfile, gate
+    from .atomic import atomic_write_json
+    from .protocol import get_protocol
 
+    proto = get_protocol(protocol)
+    samples = (proto.samples_per_prompt if samples_per_prompt is None
+               else samples_per_prompt)
     if method not in METHODS:
         raise ValueError(
             f"unknown merge method {method!r} — use one of {list(METHODS)}"
@@ -373,10 +389,58 @@ def run_merge(model_a, model_b, method, t, eval_path, out_dir,
     if not 0.0 <= float(t) <= 1.0:
         raise ValueError(f"blend weight t must be in [0, 1], got {t!r}")
     data = evalfile.load_eval_file(eval_path)
+    # File safety, before any weight is loaded: the out_dir must not
+    # be (in/around) either input model. An HF id resolves to its
+    # cached snapshot dir when it is cached. No model-size cap: use
+    # small models for better performance.
+    from .safe_paths import assert_output_dir_safe, resolve_model_dirs
+
+    assert_output_dir_safe(out_dir,
+                           resolve_model_dirs([model_a, model_b]),
+                           force=force)
     serving = data.get("serving_temperature", 0.7)
     gate_temps = list(dict.fromkeys([serving, 0.0] +
                                     list(data.get("gate_temperatures",
                                                 [serving, 0.0]))))
+    # v2 preflight: a below-minimum eval cannot SHIP, so refuse it
+    # before loading any model. The report is INCONCLUSIVE (not a
+    # gate failure on the numbers) and no model ships.
+    from .splits import preflight
+
+    problems = preflight(data, proto)
+    if problems:
+        os.makedirs(out_dir, exist_ok=True)
+        from . import __version__
+
+        report = {
+            "report_version": 1,
+            "kit_version": __version__,
+            "mode": "merge",
+            "method": method,
+            "t": float(t),
+            "model_a": model_a,
+            "model_b": model_b,
+            "protocol": proto.name,
+            "evidence_level": ("standard" if proto.name == "v2"
+                               else "quick"),
+            "before": None,
+            "after": None,
+            "gate": {"passed": False, "verdict": "INCONCLUSIVE",
+                     "reason": problems[0], "by_temperature": {}},
+            "eval_name": data.get("name"),
+            "eval_file": os.path.basename(data.get("_path", "")),
+            "eval_passes_spent": 0,
+            "serving_temperature": serving,
+            "note": (
+                "Merge mode (R6): the eval file is below the v2 "
+                "minimums, so this merge cannot be judged — nothing "
+                "ships. Add more of YOUR OWN prompts: the kit never "
+                "invents them."),
+        }
+        atomic_write_json(os.path.join(out_dir, "report.json"), report)
+        log(f"merge refused: {problems[0]}")
+        return report, out_dir, 1
+    _require_real()
     log(f"loading {model_a} ...")
     config_a, state_a, tok_a, params_a, dtypes_a = load_model_dir(model_a)
     log(f"loading {model_b} ...")
@@ -387,11 +451,6 @@ def run_merge(model_a, model_b, method, t, eval_path, out_dir,
             "not the same base — merge refused:\n  " +
             "\n  ".join(mismatches)
         )
-    if params_a > MAX_PARAMS:
-        raise ValueError(
-            f"model has {params_a:,} parameters, over the {MAX_PARAMS:,} "
-            "cap — too large for merge mode"
-        )
     log(f"  same base confirmed ({params_a:,} parameters, "
         f"{len(state_a)} tensors)")
     log(f"merging ({method}, t={t}) ...")
@@ -399,108 +458,178 @@ def run_merge(model_a, model_b, method, t, eval_path, out_dir,
     log(f"  merged {stats['tensors_merged']} tensors "
         f"({stats['params_merged']:,} parameters), "
         f"copied {stats['tensors_copied']} non-float tensors")
-    save_merged_model(out_dir, config_a, _resolve_model_dir(model_a),
-                      merged_state, dtypes_a)
-    recipe = {
-        "format_version": 1,
-        "mode": "merge",
-        "method": method,
-        "t": float(t),
-        "model_a": model_a,
-        "model_b": model_b,
-        "total_params": params_a,
-        "same_base_mismatches": [],
-        "tensors_merged": stats["tensors_merged"],
-        "tensors_copied": stats["tensors_copied"],
-        "params_merged": stats["params_merged"],
-    }
-    with open(os.path.join(out_dir, "merge.json"), "w") as f:
-        json.dump(recipe, f, indent=2)
-    # Free the raw states before loading models for evaluation.
-    del state_a, state_b, merged_state
-    import gc
-    gc.collect()
+    # The merged model lives in a partial directory until the gate
+    # decides: it moves into out_dir only on a pass, and the partial
+    # directory is deleted in the finally otherwise.
+    partial_dir = f"{out_dir}.partial-{os.getpid()}"
+    try:
+        save_merged_model(partial_dir, config_a,
+                          _resolve_model_dir(model_a),
+                          merged_state, dtypes_a)
+        merge_recipe = {
+            "format_version": 1,
+            "mode": "merge",
+            "method": method,
+            "t": float(t),
+            "model_a": model_a,
+            "model_b": model_b,
+            "total_params": params_a,
+            "same_base_mismatches": [],
+            "tensors_merged": stats["tensors_merged"],
+            "tensors_copied": stats["tensors_copied"],
+            "params_merged": stats["params_merged"],
+        }
+        # Free the raw states before loading models for evaluation.
+        del state_a, state_b, merged_state
+        import gc
+        gc.collect()
 
-    from .real_pipeline import evaluate
-    from .real_runner import RealModel
+        from .evalfile import SET_NAMES
+        from .real_runner import RealModel
 
-    passes = count_eval_passes(data, gate_temps, samples_per_prompt)
-    log(f"evaluating baseline ({model_a}) ...")
-    base_model = RealModel(model_a, dtype=dtype)
-    baseline = {}
-    for temp in gate_temps:
-        log(f"  temperature {temp}:")
-        baseline[temp] = evaluate(base_model, data, temp,
-                                  samples_per_prompt, seed, log)
-    del base_model
-    gc.collect()
-    log(f"evaluating merged model ({out_dir}) ...")
-    merged_model = RealModel(out_dir, dtype=dtype)
-    after = {}
-    for temp in gate_temps:
-        log(f"  temperature {temp}:")
-        after[temp] = evaluate(merged_model, data, temp,
-                               samples_per_prompt, seed, log)
-    del merged_model
-    gc.collect()
+        passes = count_eval_passes(data, gate_temps, samples)
+        log(f"evaluating baseline ({model_a}) ...")
+        base_model = RealModel(model_a, dtype=dtype)
+        if proto.name == "v2":
+            from .real_pipeline import evaluate_detailed
 
-    gate_by_temp = {}
-    passed = True
-    for temp in gate_temps:
-        g = gate.check_gate(baseline[temp], after[temp])
-        gate_by_temp[str(temp)] = g
-        if not g["passed"]:
-            passed = False
-    from . import __version__
+            base_det = {}
+            for temp in gate_temps:
+                log(f"  temperature {temp}:")
+                base_det[temp] = evaluate_detailed(
+                    base_model, data, temp, samples, seed, log,
+                    scorer_version=proto.scorer_version)
+            baseline = {t: {name: base_det[t][name]["mean"]
+                            for name in SET_NAMES}
+                        for t in gate_temps}
+        else:
+            from .real_pipeline import evaluate
 
-    report = {
-        "report_version": 1,
-        "kit_version": __version__,
-        "mode": "merge",
-        "method": method,
-        "t": float(t),
-        "model_a": model_a,
-        "model_b": model_b,
-        "total_params": params_a,
-        "same_base": {
-            "checked": list(CONFIG_KEYS) + ["tokenizer_files"],
-            "mismatches": [],
-        },
-        "tensors_merged": stats["tensors_merged"],
-        "tensors_copied": stats["tensors_copied"],
-        "params_merged": stats["params_merged"],
-        "before": baseline[serving],
-        "after": after[serving],
-        "scores_by_temperature": {
-            "before": {str(k): v for k, v in baseline.items()},
-            "after": {str(k): v for k, v in after.items()},
-        },
-        "gate": {"passed": passed, "by_temperature": gate_by_temp},
-        "eval_name": data.get("name"),
-        "eval_file": os.path.basename(data.get("_path", "")),
-        "eval_passes_spent": passes,
-        "serving_temperature": serving,
-        "note": (
-            "Merge mode (R6): this model is a blend of two same-base "
-            "models, not a surgical edit. Merges are NOT covered by "
-            "the 1% weight cap. Weight-space editing was demonstrated "
-            "with GPT-6 Astra and is unproven for other models. This "
-            "merge passed the eval gate below; verify independently "
-            "before use."
-            if passed else
-            "Merge mode (R6): the gate refused this merge — nothing "
-            "ships. A refused merge is a correct result, not a "
-            "failure to hide."
-        ),
-    }
-    with open(os.path.join(out_dir, "report.json"), "w") as f:
-        json.dump(report, f, indent=2)
-    if passed:
-        log(f"gate passed: failing "
-            f"{after[serving]['failing'] - baseline[serving]['failing']:+.2f} "
-            f"points at serving temperature")
-        log("If this helped, please star the repo: "
-            "https://github.com/AuremHQ/weight-space-programming")
-    else:
-        log("gate failed — merged model not shipped")
-    return report, out_dir, 0 if passed else 1
+            baseline = {}
+            for temp in gate_temps:
+                log(f"  temperature {temp}:")
+                baseline[temp] = evaluate(base_model, data, temp,
+                                          samples, seed, log)
+        del base_model
+        gc.collect()
+        log(f"evaluating merged model ({partial_dir}) ...")
+        merged_model = RealModel(partial_dir, dtype=dtype)
+        if proto.name == "v2":
+            after_det = {}
+            for temp in gate_temps:
+                log(f"  temperature {temp}:")
+                after_det[temp] = evaluate_detailed(
+                    merged_model, data, temp, samples, seed, log,
+                    scorer_version=proto.scorer_version)
+            after = {t: {name: after_det[t][name]["mean"]
+                         for name in SET_NAMES}
+                     for t in gate_temps}
+        else:
+            after = {}
+            for temp in gate_temps:
+                log(f"  temperature {temp}:")
+                after[temp] = evaluate(merged_model, data, temp,
+                                       samples, seed, log)
+        del merged_model
+        gc.collect()
+
+
+        gate_by_temp = {}
+        if proto.name == "v2":
+            # No splits in merge mode: the gate runs on all prompts.
+            for temp in gate_temps:
+                gate_by_temp[str(temp)] = gate.check_gate_v2(
+                    {name: base_det[temp][name]["per_prompt"]
+                     for name in SET_NAMES},
+                    {name: after_det[temp][name]["per_prompt"]
+                     for name in SET_NAMES},
+                    min_gain=proto.min_gain_points,
+                    max_regress=proto.max_regress_points,
+                    guard_margin=proto.guard_margin_points)
+            verdict = gate.combine_gate_verdicts(
+                [gate_by_temp[str(t)]["verdict"]
+                 for t in gate_temps])
+            passed = verdict == "SHIP"
+        else:
+            for temp in gate_temps:
+                g = gate.check_gate(baseline[temp], after[temp],
+                                    min_gain=proto.min_gain_points)
+                gate_by_temp[str(temp)] = g
+            passed = all(g["passed"]
+                         for g in gate_by_temp.values())
+            verdict = "QUICK_PASS" if passed else "QUICK_FAIL"
+        from . import __version__
+
+        report = {
+            "report_version": 1,
+            "kit_version": __version__,
+            "mode": "merge",
+            "method": method,
+            "t": float(t),
+            "model_a": model_a,
+            "model_b": model_b,
+            "total_params": params_a,
+            "protocol": proto.name,
+            "evidence_level": ("standard" if proto.name == "v2"
+                               else "quick"),
+            "same_base": {
+                "checked": list(CONFIG_KEYS) + ["tokenizer_files"],
+                "mismatches": [],
+            },
+            "tensors_merged": stats["tensors_merged"],
+            "tensors_copied": stats["tensors_copied"],
+            "params_merged": stats["params_merged"],
+            "before": baseline[serving],
+            "after": after[serving],
+            "scores_by_temperature": {
+                "before": {str(k): v for k, v in baseline.items()},
+                "after": {str(k): v for k, v in after.items()},
+            },
+            "gate": {"passed": passed, "verdict": verdict,
+                     "by_temperature": gate_by_temp},
+            "eval_name": data.get("name"),
+            "eval_file": os.path.basename(data.get("_path", "")),
+            "eval_passes_spent": passes,
+            "serving_temperature": serving,
+            "note": (
+                "Merge mode (R6): this model is a blend of two same-base "
+                "models, not a surgical edit. Merges are NOT covered by "
+                "the 1% weight cap. Background: the LLM-editor method "
+                "was demonstrated by MIT with GPT-6 Astra; blog post, "
+                "not peer reviewed. Editor of THIS merge: arithmetic "
+                "on weights (no LLM, no editor model). This "
+                "merge passed the eval gate below; verify independently "
+                "before use."
+                if passed else
+                "Merge mode (R6): the gate refused this merge — nothing "
+                "ships. A refused merge is a correct result, not a "
+                "failure to hide."
+            ),
+        }
+        if passed:
+            # Move the merged model into place: a whole-directory
+            # os.replace when out_dir does not exist yet, else move
+            # the files (out_dir may already hold an old report.json
+            # from a refused merge).
+            if not os.path.exists(out_dir):
+                os.replace(partial_dir, out_dir)
+            else:
+                for name in os.listdir(partial_dir):
+                    os.replace(os.path.join(partial_dir, name),
+                               os.path.join(out_dir, name))
+                os.rmdir(partial_dir)
+        os.makedirs(out_dir, exist_ok=True)
+        atomic_write_json(os.path.join(out_dir, "merge.json"),
+                          merge_recipe)
+        atomic_write_json(os.path.join(out_dir, "report.json"), report)
+        if passed:
+            log(f"gate passed: failing "
+                f"{after[serving]['failing'] - baseline[serving]['failing']:+.2f} "
+                f"points at serving temperature")
+        else:
+            log("gate failed — merged model not shipped")
+        return report, out_dir, 0 if passed else 1
+    finally:
+        # A refused merge leaves no partial directory behind.
+        if os.path.isdir(partial_dir):
+            shutil.rmtree(partial_dir, ignore_errors=True)

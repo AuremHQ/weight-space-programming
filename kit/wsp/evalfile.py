@@ -97,6 +97,9 @@ def validate_eval(data, path="<eval>"):
                 "(use 'loop', 'contains', 'finish', 'sequence' or "
                 "'distinct')"
             )
+        set_valid = entry.get("valid_items")
+        if set_valid is not None:
+            _validate_valid_items(set_valid, scorer, path, name, None)
         prompts = entry.get("prompts")
         if not isinstance(prompts, list) or not prompts:
             raise ValueError(f"{path}: set {name!r} needs a non-empty "
@@ -107,6 +110,15 @@ def validate_eval(data, path="<eval>"):
                     f"{path}: set {name!r} prompt {i} needs a non-empty "
                     "'prompt' string"
                 )
+            family = p.get("family")
+            if family is not None and not isinstance(family, str):
+                raise ValueError(
+                    f"{path}: set {name!r} prompt {i} 'family' must "
+                    "be a string"
+                )
+            valid = p.get("valid_items")
+            if valid is not None:
+                _validate_valid_items(valid, scorer, path, name, i)
             if scorer == "contains" and not p.get("expect"):
                 raise ValueError(
                     f"{path}: set {name!r} prompt {i} uses the 'contains' "
@@ -126,6 +138,64 @@ def validate_eval(data, path="<eval>"):
                         "'expect_count' int"
                     )
     return data
+
+
+def _validate_valid_items(valid, scorer, path, name, index):
+    """Validate a ``valid_items`` field (prompt or set level).
+
+    NEW in v2, only with the 'distinct' scorer (never reuse
+    ``expect_items``, which belongs to 'sequence'). Either a list
+    of non-empty strings, or a non-empty string naming a file with
+    one item per line. Raises ValueError otherwise.
+    """
+    where = f"{path}: set {name!r}" + (
+        f" prompt {index}" if index is not None else "")
+    if scorer != "distinct":
+        raise ValueError(
+            f"{where} has 'valid_items', which is only allowed "
+            "with the 'distinct' scorer")
+    if isinstance(valid, str):
+        if not valid:
+            raise ValueError(f"{where} 'valid_items' file path "
+                             "must be a non-empty string")
+        return
+    if (not isinstance(valid, list) or not valid
+            or any(not isinstance(v, str) or not v for v in valid)):
+        raise ValueError(
+            f"{where} 'valid_items' must be a list of non-empty "
+            "strings (or a file path string)")
+
+
+def resolve_valid_items(data, name, prompt):
+    """The resolved ``valid_items`` list for one prompt, or None.
+
+    Prompt-level wins over set-level. A string value names a file
+    with one item per line, resolved relative to the eval file's
+    directory when relative. Returns None when the prompt/set
+    carries no ``valid_items``.
+    """
+    valid = prompt.get("valid_items")
+    if valid is None:
+        valid = data["sets"][name].get("valid_items")
+    if valid is None:
+        return None
+    if isinstance(valid, list):
+        return list(valid)
+    path = valid
+    if not os.path.isabs(path):
+        base = os.path.dirname(os.path.abspath(
+            data.get("_path", "") or ""))
+        path = os.path.join(base, path)
+    try:
+        with open(path) as f:
+            items = [ln.strip() for ln in f if ln.strip()]
+    except OSError as exc:
+        raise ValueError(
+            f"valid_items file not readable: {valid} ({exc})") from exc
+    if not items:
+        raise ValueError(
+            f"valid_items file is empty: {valid}")
+    return items
 
 
 def set_prompts(data, name):

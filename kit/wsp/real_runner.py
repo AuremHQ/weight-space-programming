@@ -19,6 +19,8 @@ transformers, accelerate). Importing this module without them raises
 a plain ImportError with that hint.
 """
 
+import os
+
 import numpy as np
 
 try:
@@ -30,9 +32,9 @@ except ImportError as exc:  # pragma: no cover - import-time guard
         "pip install 'wsp-kit[real]'"
     ) from exc
 
-from . import layers
+from . import layers, size_check
 
-MAX_PARAMS = 3_000_000_000
+# No model-size cap: use small models for better performance.
 
 
 def count_params(model):
@@ -47,6 +49,15 @@ class RealModel:
         self.model_id = model_id
         self.device = device
         self.thinking = thinking
+        # F16 (no cap): estimate the size BEFORE any weight is
+        # downloaded or loaded, so an unresolvable id fails closed
+        # here with a plain ValueError instead of a loader
+        # traceback. A large estimate no longer refuses the load —
+        # there is no model-size cap. Use small models for better
+        # performance. The parameter count below is recorded for the
+        # 1% edit cap (apply_edit / dampen_columns), not as a size
+        # refusal.
+        size_check.estimate_param_count(model_id)
         self.tokenizer = AutoTokenizer.from_pretrained(model_id)
         torch_dtype = getattr(torch, dtype)
         # transformers 5.x renamed torch_dtype -> dtype; older versions
@@ -62,15 +73,19 @@ class RealModel:
         self.model.to(device)
         self.model.eval()
         total = count_params(self.model)
-        if total > MAX_PARAMS:
-            raise ValueError(
-                f"model has {total:,} parameters, over the {MAX_PARAMS:,} "
-                "cap — too large for weight-space editing with current tooling"
-            )
         self.total_params = total
         if use_chat_template is None:
             use_chat_template = self.tokenizer.chat_template is not None
         self.use_chat_template = bool(use_chat_template)
+        # The hub revision (commit hash) of the model as loaded, for
+        # the record (edit.json model_revision, apply-edit.json).
+        # A local directory has no hub revision: None.
+        self.revision = self._hub_revision(model_id)
+        # F15: remember where the weights came from, so save() can
+        # refuse to write edited weights over the originals. A local
+        # directory is itself; an HF id is its cached snapshot dir
+        # (the model is cached by now, having just loaded).
+        self.source_dir = self._local_model_dir(model_id)
         blocks, _path = layers.find_decoder_blocks(self.model)
         self.blocks = blocks
         self.layer_infos = layers.describe_layers(self.model)
@@ -85,6 +100,34 @@ class RealModel:
         for info in self.layer_infos:
             block = blocks[info["index"]]
             self._mlps[info["index"]] = getattr(block, info["mlp_name"])
+
+    @staticmethod
+    def _local_model_dir(model_id):
+        """The local directory a model was loaded from, or None.
+
+        A local directory is itself; an HF id resolves to its cached
+        snapshot directory (local_files_only — never a download).
+        """
+        if os.path.isdir(model_id):
+            return os.path.abspath(model_id)
+        try:
+            from huggingface_hub import snapshot_download
+
+            return snapshot_download(model_id, local_files_only=True)
+        except Exception:
+            return None
+
+    @staticmethod
+    def _hub_revision(model_id):
+        """Hub revision (commit hash) of a hub model, else None.
+
+        A local directory has no hub revision. Read from the local
+        cache only — never from the network.
+        """
+        if os.path.isdir(model_id):
+            return None
+        local = RealModel._local_model_dir(model_id)
+        return os.path.basename(local) if local else None
 
     # -- prompts -----------------------------------------------------
 
@@ -113,8 +156,15 @@ class RealModel:
     # -- generation --------------------------------------------------
 
     @torch.no_grad()
-    def generate(self, prompt, max_new_tokens, temperature, seed):
-        """Generate once. Returns (text, finished, new_token_count)."""
+    def generate(self, prompt, max_new_tokens, temperature, seed,
+                 repetition_penalty=None, no_repeat_ngram_size=None):
+        """Generate once. Returns (text, finished, new_token_count).
+
+        ``repetition_penalty`` and ``no_repeat_ngram_size`` are
+        optional pass-throughs to HF generate (the v2 cheap-fix
+        candidates); None (the default) changes nothing, so every
+        existing caller keeps working.
+        """
         text = self.render(prompt)
         ids = self.tokenizer(text, return_tensors="pt").to(self.device)
         kwargs = {
@@ -122,6 +172,10 @@ class RealModel:
             "pad_token_id": self._pad_id(),
             "eos_token_id": self._eos_id(),
         }
+        if repetition_penalty is not None:
+            kwargs["repetition_penalty"] = float(repetition_penalty)
+        if no_repeat_ngram_size is not None:
+            kwargs["no_repeat_ngram_size"] = int(no_repeat_ngram_size)
         if temperature == 0:
             kwargs["do_sample"] = False
         else:
@@ -142,6 +196,35 @@ class RealModel:
             finished,
             int(len(new_ids)),
         )
+
+    # -- guard measurements (v2, W2.9) --------------------------------
+
+    @torch.no_grad()
+    def nll(self, text):
+        """Mean negative log-likelihood per token of ``text``.
+
+        The perplexity guard's input: perplexity is exp(mean NLL),
+        so the edited/base perplexity ratio is exp(mean NLL
+        difference). No generation; one forward pass.
+        """
+        ids = self.tokenizer(self.render(text),
+                             return_tensors="pt").to(self.device)
+        out = self.model(**ids, labels=ids["input_ids"])
+        return float(out.loss.item())
+
+    @torch.no_grad()
+    def top1(self, text):
+        """Top-1 next-token id after ``text`` (as context).
+
+        The top-1 agreement guard's input: the fraction of neutral
+        texts where the edited model's top-1 matches the base
+        model's. No generation; one forward pass.
+        """
+        ids = self.tokenizer(self.render(text),
+                             return_tensors="pt").to(self.device)
+        out = self.model(**ids)
+        last = out.logits[0, -1, :]
+        return int(torch.argmax(last).item())
 
     # -- diagnosis capture -------------------------------------------
 
@@ -223,6 +306,72 @@ class RealModel:
             weight.copy_(new)
         return changed, (layer_index, list(columns), saved)
 
+    def dampen_columns(self, layer_index, columns, factor):
+        """Scale columns of one down-projection by ``factor`` in [0, 1].
+
+        Returns (changed_count, saved) where saved restores the edit
+        exactly. Raises ValueError if the edit breaks the 1% cap or
+        the factor is outside [0, 1]. This is the pipeline's edit
+        when the causal proof is positive: it shrinks what the
+        suspect columns output instead of injecting a subtracted
+        direction (see ``wsp.real_edit``).
+        """
+        from .real_edit import MAX_EDIT_FRACTION, apply_dampen
+
+        proj = self._down_projs[layer_index]
+        info = self._infos_by_index[layer_index]
+        layout = info["weight_layout"]
+        intended = len(columns) * int(info["hidden_size"])
+        frac = intended / self.total_params
+        if frac > MAX_EDIT_FRACTION:
+            raise ValueError(
+                f"edit touches {frac:.2%} of weights, over the 1% cap — "
+                "rejected as too broad"
+            )
+        weight = proj.weight.data
+        if layout == "out_in":
+            saved = weight[:, list(columns)].clone()
+        else:
+            saved = weight[list(columns), :].clone()
+        new, changed = apply_dampen(weight, columns, factor,
+                                    layout=layout)
+        with torch.no_grad():
+            weight.copy_(new)
+        return changed, (layer_index, list(columns), saved)
+
+    def mean_column_norm(self, layer_index, columns):
+        """Mean L2 norm of the selected down-proj columns (fp32).
+
+        Used by the pipeline to size a sane subtraction alpha: the
+        edit is bounded relative to the columns' own size, not to a
+        signed-mean activation that cancels to ~0 (see
+        ``wsp.real_edit.capped_alpha_from_column_norm``). For layout
+        ``"out_in"`` a column is weight[:, c]; for ``"in_out"``
+        (Conv1D) it is the row weight[c, :].
+        """
+        proj = self._down_projs[layer_index]
+        info = self._infos_by_index[layer_index]
+        layout = info["weight_layout"]
+        weight = proj.weight.data
+        with torch.no_grad():
+            if layout == "out_in":
+                cols = weight[:, list(columns)].to(torch.float32)
+                norms = torch.linalg.vector_norm(cols, dim=0)
+            else:
+                rows = weight[list(columns), :].to(torch.float32)
+                norms = torch.linalg.vector_norm(rows, dim=1)
+        return float(norms.mean().item())
+
+    def down_proj_weight(self, layer_index):
+        """The down-proj weight tensor, detached on CPU (for verify).
+
+        The caller only reads bytes from it (see
+        ``wsp.verify.changed_tensors_sha256``); it never mutates
+        the model through this handle.
+        """
+        proj = self._down_projs[layer_index]
+        return proj.weight.data.detach().cpu().contiguous()
+
     def restore(self, saved):
         """Copy saved columns back exactly (bitwise restore).
 
@@ -254,8 +403,20 @@ class RealModel:
                 proj.weight.data[list(columns), :] = 0
         return (layer_index, list(columns), saved)
 
-    def save(self, out_dir):
-        """Save the (possibly edited) model + tokenizer to a new dir."""
+    def save(self, out_dir, force=False):
+        """Save the (possibly edited) model + tokenizer to a new dir.
+
+        Defence in depth (F15): refuses to write over the directory
+        the model was loaded from, or into/around it, or into a
+        directory that already holds model files — unless ``force``
+        is True (the caller got an explicit ``--force`` from the
+        user, after the pipeline's own out-dir check passed).
+        """
+        from .safe_paths import assert_output_dir_safe
+
+        if self.source_dir is not None:
+            assert_output_dir_safe(out_dir, [self.source_dir],
+                                   force=force)
         self.model.save_pretrained(out_dir)
         self.tokenizer.save_pretrained(out_dir)
         return out_dir

@@ -66,9 +66,10 @@ def load_seen(out_dir):
 
 
 def save_seen(out_dir, seen):
+    from .atomic import atomic_write_json
+
     os.makedirs(out_dir, exist_ok=True)
-    with open(os.path.join(out_dir, SEEN_FILE), "w") as f:
-        json.dump(seen, f, indent=2)
+    atomic_write_json(os.path.join(out_dir, SEEN_FILE), seen)
 
 
 def run_once(model_id, eval_path, out_dir, log=print, **pipeline_kwargs):

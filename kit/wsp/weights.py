@@ -11,22 +11,17 @@ import os
 
 import numpy as np
 
-MAX_PARAMS = 3_000_000_000
-
 
 def total_params(weights):
     return int(sum(int(v.size) for v in weights.values()))
 
 
 def check_size(weights):
-    """Refuse models over the cap. The cap is a starting value, not physics."""
-    n = total_params(weights)
-    if n > MAX_PARAMS:
-        raise ValueError(
-            f"model has {n:,} parameters, over the {MAX_PARAMS:,} cap — "
-            "too large for weight-space editing with current tooling"
-        )
-    return n
+    """Return the model's parameter count.
+
+    No model-size cap: use small models for better performance.
+    """
+    return total_params(weights)
 
 
 def load_weights(path):

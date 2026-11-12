@@ -1,4 +1,7 @@
-"""MCP server: the same pipeline, callable from any MCP harness.
+"""MCP server: the kit pipeline, callable from any MCP harness.
+
+Demo only — every tool drives the built-in toy model, not a real
+model. Use ``wsp run`` for real models.
 
 Tools are versioned by the kit version (see ``wsp_version``). Tool
 names and parameters are stable: later versions add tools, they do
@@ -14,11 +17,18 @@ Needs the ``mcp`` package: pip install 'wsp-kit[mcp]'.
 """
 
 try:
+    # mcp 2.x (verified against mcp 2.3.0): FastMCP was renamed to
+    # MCPServer. Try the verified name first.
     from mcp.server.mcpserver import MCPServer
 except ImportError:
-    raise SystemExit(
-        "the mcp package is not installed — run: pip install 'wsp-kit[mcp]'"
-    ) from None
+    try:
+        # mcp 1.x: the old name.
+        from mcp.server.fastmcp import FastMCP as MCPServer
+    except ImportError:
+        raise SystemExit(
+            "the mcp package is not installed — run: "
+            "pip install 'wsp-kit[mcp]'"
+        ) from None
 
 from . import __version__, diagnose, edit, gate, pipeline, kit_test
 
@@ -42,6 +52,14 @@ def wsp_version():
     """Kit and report-format versions."""
     from . import REPORT_VERSION
     return {"kit_version": __version__, "report_version": REPORT_VERSION}
+
+
+@mcp.tool()
+def wsp_capabilities():
+    """What these tools can and cannot do: toy model only."""
+    return {"real_models": False,
+            "note": "tools drive the built-in toy model; "
+                    "use `wsp run` for real models"}
 
 
 @mcp.tool()

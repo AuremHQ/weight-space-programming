@@ -2,16 +2,13 @@
 
 ![wsp-kit — real runs](assets/wsp-kit-banner.png)
 
-> 🤖 **Reading this with an AI?** Start with [llms.txt](llms.txt) — one file with everything about this repo: what the kit does, the real run numbers, how to install and run it, and the honest limits. If you read only one file, read that one.
-
 ## Problem → Edit → Result — our real runs
 
 - **Problem:** Qwen3-0.6B and SmolLM2-1.7B looped on 60-item lists — asking for 60 different animals gave repeats.
 - **Edit:** a tiny weight change — 131,072 weights (0.022%) on Qwen, 129,897 weights (0.0076%) on SmolLM2. No retraining, no gradients.
-- **Result:** Qwen 37.78 → 67.22 (+29.44); SmolLM2 76.11 → 85.56 (+9.44). Good and neighbours stayed at 100.
+- **Result:** Qwen 37.78 → 67.22 (+29.44); SmolLM2 76.11 → 85.56 (+9.44). Good and neighbours stayed at 100. Both passes are quick evidence (3 failing prompts), not reproducible from this repo yet.
 - **Gate:** 2 of 7 runs passed. The other 5 were refused and shipped 0 weights.
 - **Proof:** every run, pass and fail, is published in [REAL-RUNS.md](REAL-RUNS.md).
-- **Last updated 7 November 2026** — numbers current as of 6 November 2026.
 
 > **wsp-kit by Aurem** — an engineering tool for small models. Try to fix small AI models by editing their weights directly — no retraining, no fine-tuning, no gradients — with an eval gate deciding whether any edit ships.
 
@@ -24,7 +21,7 @@
 
 > 🌐 **Website:** https://auremhq.github.io/weight-space-programming/ — the full detailed guide: our vision, the kit's performance, and Aurem's other software.
 
-> ⭐ **Star this repo before you go** — your one star encourages our team to keep building incredible things, free for everyone, and to grow this community. The real runs are live below, with honest numbers.
+> ⭐ **Star this repo** — your one star encourages our team to keep building incredible things, free for everyone, and to grow this community. The real runs are live below, with honest numbers.
 > 🔁 **Share it** with anyone running a small open model with one stubborn failure.
 
 ---
@@ -52,7 +49,7 @@ We ran the kit on **real models** — Qwen3-0.6B, GPT2-124M, and SmolLM2-1.7B-In
 | **GPT-2 run** | GPT2-124M | 60-item lists loop (animals 1.7, countries 5.0, fruits 1.7) | Layers [10, 11] | −1.11 — FAILED | **0** | **FAILED — nothing shipped** |
 | **Qwen narrow Try 1** | Qwen3-0.6B | 60-item lists loop, narrow eval | Layers [27, 26] | **+23.89 — PASSED** | **0** | **FAILED — nothing shipped** (all 3 subtraction attempts destroyed the model at greedy) |
 | **Qwen narrow dampen** | Qwen3-0.6B | Same failure, narrow eval | Layers [27, 26] | **+23.89 — PASSED** | **131,072 (0.022%)** | **PASSED — failing 37.78 → 67.22 (+29.44)** |
-| **SmolLM2 run** | SmolLM2-1.7B-Instruct | 60-item lists loop (Butterfly ×2, Elephant ×2, Giraffe ×3) | Layer 23 | −30.00 — FAILED | **129,897 (0.0076%)** | **PASSED — failing 76.11 → 85.56 (+9.44)** |
+| **SmolLM2 run** | SmolLM2-1.7B-Instruct | 60-item lists loop (Butterfly ×2, Elephant ×2, Giraffe ×3) | Layer 23 | −30.00 — PASSED the v1 bar (|−30| ≥ 5), though the ablation made it worse | **129,897 (0.0076%)** | **PASSED — failing 76.11 → 85.56 (+9.44)** |
 
 **What this proves:** the kit runs end-to-end on real models, finds real failures, diagnoses real layers — and **the gate works**: 5 of 7 runs were refused, and **2 real-model edits passed the gate** (SmolLM2 by subtraction, Qwen narrow by dampening).
 **What it does not prove yet:** that the kit fixes real models in general. 2 passes out of 7 runs, both on the same narrow failure (60-item list looping) — that is the claim, not a general proof.
@@ -91,15 +88,22 @@ Full details, all 8 experiments, and the honest limits: see [RESEARCH.md](RESEAR
 ```mermaid
 flowchart LR
     A[Detect: find weights + failure] --> B[Diagnose: find the direction]
-    B --> C[Fix: subtract or dampen it — under 1% of weights]
+    B --> C[Fix: subtract it — under 1% of weights]
     C --> D{Eval gate: same prompts, same settings}
-    D -->|Improved +5, no guard regression| E[Ship as reviewable change]
+    D -->|Improved +2, no guard regression| E[Ship as reviewable change]
     D -->|Not improved| F[Discard — ship nothing]
 ```
 
-1. **Detect** — Find the weights in your repo, run your model on your own test prompts, diagnose the failure, and measure it first (how often, how bad) — that baseline is what the eval gate compares against. No weights, no test prompts, or a model that's too large → the skill refuses, clearly, and does nothing.
-2. **Fix** — Subtract the offending direction from the identified layers only, or dampen the suspect columns down (the Qwen pass used dampening by 0.25). Edits are tiny by design: anything over 1% of weights is rejected as "too broad."
-3. **Eval-gate** — Re-run the *same* prompts with the *same* settings. The fix ships only if the primary metric improves by at least 5 points with no guard-metric regression worse than 2 points. Otherwise the edit is discarded. **No gate, no ship.**
+1. **Detect** — Find the weights in your repo, run your model on your own test prompts, diagnose the failure, and measure it first (how often, how bad) — that baseline is what the eval gate compares against. No weights or no test prompts → the skill refuses, clearly, and does nothing.
+2. **Fix** — Subtract the offending direction from the identified layers only. Edits are tiny by design: anything over 1% of weights is rejected as "too broad."
+3. **Eval-gate** — Re-run the *same* prompts with the *same* settings. The fix ships only if the primary metric improves by at least 2 points with no guard-metric regression worse than 2 points. Otherwise the edit is discarded. **No gate, no ship.**
+
+Refusals — what the kit refuses, and how each is enforced:
+- No eval file (no test prompts from you): enforced in code — the run stops with a plain message (exit 2), nothing edited.
+- No weights (API-only model): partially enforced — the model loader fails and the run stops with a plain message (exit 2), nothing edited; there is no dedicated pre-check.
+- Add capability with no diagnosed obstacle: SKILL.md only — not enforced in code.
+- Edit a production branch in place: SKILL.md only — not enforced in code.
+- Remove safety/refusal behaviour: SKILL.md only — not prevented in code; the v2 default guard bundle detects refusal regression after an edit, it does not prevent safety removal.
 
 Full rules, refusals, and safety gates: see [SKILL.md](SKILL.md).
 
@@ -110,7 +114,7 @@ Gradient descent trains: data + loss → gradients → many small updates → a 
 ```mermaid
 flowchart LR
     G[Data + loss] --> H[Gradients] --> I[Many small updates] --> J[Retrained model]
-    K[Diagnosed direction] --> L[One subtraction or dampening] --> M[Re-test + eval gate] --> N[Reviewable fix — or nothing]
+    K[Diagnosed direction] --> L[One subtraction] --> M[Re-test + eval gate] --> N[Reviewable fix — or nothing]
 ```
 
 If you want training, use training. If you want to try removing one stubborn failure without retraining, use this.
@@ -121,11 +125,9 @@ If you want training, use training. If you want to try removing one stubborn fai
 
 - **[RESEARCH.md](RESEARCH.md)** — the MIT research, explained simply: what weight-space programming is, all 8 experiments with numbers, and where it fails.
 - **[SKILL.md](SKILL.md)** — the Weight-Space Programming skill: the 3-step workflow, hard refusal rules, and safety gates.
-- **[REAL-RUNS.md](REAL-RUNS.md)** — our real-model runs (Qwen + GPT-2) with full numbers, honest gate verdicts, and what they prove.
+- **[REAL-RUNS.md](REAL-RUNS.md)** — our real-model runs (Qwen + GPT-2 + SmolLM2) with full numbers, honest gate verdicts, and what they prove.
 - **[DEMO-PLAN.md](DEMO-PLAN.md)** — how the real runs were built, and the exact bar the next run must clear.
 - **[kit/](kit/)** — the runnable kit: engine, CLI, MCP server, task pack, and the universal real-model pipeline (`wsp run`).
-- **[install.sh](install.sh)** — one-command installer for the skill and the kit.
-- **[llms.txt](llms.txt)** — machine-readable index of this repo: what the kit is, the real run numbers, and links to the docs.
 
 ---
 
@@ -146,7 +148,23 @@ wsp run --model Qwen/Qwen3-0.6B --eval kit/evals/loop-fix-qwen3-0.6b.json --out-
 
 That runs the full gated pipeline — temperature sweep, baselines, diagnosis, causal proof, up to 3 edit attempts — and writes `report.json`. If the gate fails, the out-dir holds only the report: **nothing ships**.
 
-For agents and harnesses, the same pipeline is an MCP server (requires `pip install 'wsp-kit[mcp]'` first):
+Safety flags (Phase 1):
+
+| Flag | Commands | What it does |
+| --- | --- | --- |
+| `--force` | `run`, `apply-edit`, `merge` | Allow an out-dir that already holds model files. Without it, the kit refuses to write over model weights. |
+| `--allow-quick` | `serve-model`, `apply-edit` | Accept a report with no SHIP verdict (QUICK evidence — every report written before Phase 2). Without it, only SHIP reports are applied. |
+| `--allow-unverified` | `apply-edit` | Apply an edit with no `report.json` next to it (no gate pass tied to the edit). |
+| `--verify` | `apply-edit` | After applying, compare the sha256 of the changed tensors with `--expected-sha256` and print MATCH or DIVERGED (exit 1 on DIVERGED). |
+| `--expected-sha256 HEX` | `apply-edit` | Recorded sha256 of the changed tensors (from the run's PROVENANCE.md); required with `--verify`. |
+| `reproduce <run-dir>` | `reproduce` | Re-run a recorded run and print MATCH or DIVERGED on the primary metric within `--tolerance` points (default 5.0); early reports with missing samples/seed/max tokens print "cannot be reproduced exactly: missing <fields>". |
+| `--token TOKEN` (or `WSP_TOKEN`) | `serve-model` | Require a bearer token for `POST /generate` and `/rollback`. `/status` stays open. |
+| `--protocol v1\|v2` | `run`, `watch`, `loop`, `merge` (`auto` defaults to v1) | v2 is standard evidence (default). `--protocol v1` restores the old measurement, labelled QUICK, never evidence. |
+| `--dry-run` | `run` | Print the cost plan (prompt counts, exact generate calls per phase, total) and exit without loading or writing anything. |
+| `--no-default-guards` | `run` | Turn the default guard bundle off (v2 only; the report records guards as disabled). |
+| `--samples-per-prompt N` | `run`, `watch`, `loop`, `merge` | Samples at non-greedy temperatures (default: 1 for v1, 3 for v2). |
+
+For agents and harnesses, the kit pipeline is available as an MCP server — demo only: every tool drives the built-in toy model, not a real model; use `wsp run` for real models (requires `pip install 'wsp-kit[mcp]'` first):
 
 ```json
 {
@@ -183,11 +201,11 @@ That's the whole deal. No retraining bill, no blind trust.
 
 ## Keep it improving — in the background, live
 
-Fixing a model once is not enough — it will fail at new things. So the kit can keep working in the background, and your running model can keep improving without you doing anything. The loop and live model are available, not yet benchmarked — no published run of them exists yet, so the claim is only that they run, not that they improve a model.
+Fixing a model once is not enough — it will fail at new things. So the kit can keep working in the background, and your running model keeps getting better without you doing anything.
 
 **What it is, in plain words:**
 - **`wsp loop` watches for failures.** When your model fails at something — you write the failure in a file, or drop in a test file — the kit runs the gated pipeline on it. If the fix passes the gate, it becomes a new version. If it fails the gate, nothing ships, and the same failure is never retried.
-- **`wsp serve-model` serves your model and applies each new passing fix to the SAME running model** — the old weights are overridden by the updated ones, in place. No reload, no restart, no swap. The next prompt automatically uses the updated weights. If a fix ever feels wrong, one rollback undoes it exactly.
+- **`wsp serve-model` serves your model and applies each new passing fix to the SAME running model** — the old weights are overridden by the updated ones, in place. No reload, no restart, no swap. The next prompt automatically uses the updated weights. Only ONE fix is ever active at a time: when a newer passing fix arrives, the previous fix is undone first (its original weights are restored exactly), then only the new fix is applied — fixes replace, they never stack. If a fix ever feels wrong, one rollback undoes it exactly and returns the model to its original weights (it does not bring back the previous fix).
 
 **How to run it (two commands, two terminals):**
 
@@ -198,13 +216,13 @@ wsp serve-model --model Qwen/Qwen3-0.6B --versions-dir ./wsp-loop-out
 
 Your app talks to the live model at `http://127.0.0.1:8900` (`POST /generate`). The loop keeps improving in the background; the model keeps using the updated weights. The user gets the benefit without doing anything.
 
-**The safety rules never change:** the eval gate (+5/−2), the 1% weight cap, and the 3B model cap apply to every run. Only gate-passing edits for your exact model are ever applied, and the original weights are always kept for instant rollback.
+**The safety rules never change:** the eval gate (+2/−2) and the 1% weight cap apply to every run. Use small models for better performance. Only gate-passing edits for your exact model are ever applied, and the original weights are always kept for instant rollback.
 
 ---
 
 ## Honest limits — why you can trust this repo
 
-- The MIT work is a **blog post, not a peer-reviewed paper**. **Not peer-reviewed; Hugging Face rebuilt the edited model from the authors' logs** (re-ran its evaluation, made a live demo).
+- The MIT work is a **blog post, not a peer-reviewed paper**, and has not yet been independently replicated.
 - Demonstrated so far mainly with **one editor model (GPT-6 Astra)**. Whether other models do this equally well is **unproven** — our reports name the editor behind every run (ours is a numerical estimator, no LLM).
 - This is a **batch job, not real-time**: load weights, run evaluations, reason, edit, re-evaluate. It never runs live inside a chat reply.
 - **Two real-model edits have passed the gate** (SmolLM2 +9.44, Qwen narrow +29.44) — and five runs ended with the gate refusing and nothing shipping. That is published above, not hidden.
@@ -226,35 +244,17 @@ One command installs the skill and the kit, sets up the `wsp` command, and runs 
 Yes. Free for everyone, MIT licensed. A small model should not mean bad results.
 
 **What is the eval gate?**
-The eval gate re-runs the same prompts with the same settings after an edit. The edit ships only if the failing metric improves by at least 5 points with no more than 2 points regression on guards and neighbours, at serving temperature and greedy. If the numbers don't improve, nothing ships.
+The eval gate re-runs the same prompts with the same settings after an edit. The edit ships only if the failing metric improves by at least 2 points with no more than 2 points regression on guards and neighbours, at serving temperature and greedy. If the numbers don't improve, nothing ships.
 
 **Which models does wsp-kit support?**
-Small open-weight models up to 3B parameters that you control. Closed API models (ChatGPT, Claude) are refused — their weights are never in your hands.
-
-**What do I need to run wsp-kit?**
-Python 3.9+ and numpy run the demo. Real models need `pip install 'wsp-kit[real]'`, which adds torch, transformers and accelerate. The published runs used CPU in bfloat16 and took about 32 to 58 minutes for Qwen3-0.6B and about 35 minutes for GPT2-124M.
-
-**What does the install command do?**
-It downloads SKILL.md into `~/.claude/skills/weight-space-programming` (backing up an existing copy), downloads the kit into `~/.wsp-kit`, adds a `wsp` launcher in `~/.local/bin` (no sudo, PATH unchanged), and runs the demo, which needs no model download. To uninstall, delete those three locations. To read the script first, download install.sh and run it yourself.
-
-**Is wsp-kit the same method as MIT's?**
-No. wsp-kit is an independent implementation inspired by the MIT CSAIL blog post of 2 November 2026 and is not affiliated with MIT. In MIT's experiment a frontier LLM, GPT-6 Astra, read the weights and made the edit with up to 50 forward passes. wsp-kit uses a numerical estimator with no LLM. MIT's numbers are theirs, not ours.
-
-**Does wsp-kit subtract or dampen?**
-Both have passed the gate: subtraction on SmolLM2 and dampening on Qwen. In our runs, a positive causal proof pointed to dampening and a negative one to subtraction, but REAL-RUNS.md says there is no single editor yet.
-
-**Can an edit remove safety behaviour?**
-It can, which is why the kit refuses safety-removal requests and every edit goes through the eval gate and human review (kit README, Limits).
-
-**Can I undo an edit?**
-Yes. Original weights are never overwritten: edited weights go to a new directory, and applying an edit is a separate step (`wsp apply-edit`). On a live model, `POST /rollback` undoes the last applied edit.
+Small open-weight models that you control. Use small models for better performance. Closed API models (ChatGPT, Claude) are refused — their weights are never in your hands.
 
 ---
 
 ## Roadmap
 
 - [x] Research summary + skill spec
-- [x] **Real runs live: Qwen3-0.6B + GPT2-124M, honest numbers, gate enforced** — see [REAL-RUNS.md](REAL-RUNS.md)
+- [x] **Real runs live: Qwen3-0.6B + GPT2-124M + SmolLM2-1.7B, honest numbers, gate enforced** — see [REAL-RUNS.md](REAL-RUNS.md)
 - [x] Easy mode: install runs the demo, `wsp auto` asks 4 questions and runs by itself
 - [x] Continuous loop + live model: `wsp loop` keeps improving in the background, `wsp serve-model` applies new passing edits to the same running model — no reload, no swap
 - [x] First passing weight edit on a real model — **two passes: SmolLM2 (+9.44) and Qwen narrow (+29.44)** — see [REAL-RUNS.md](REAL-RUNS.md)

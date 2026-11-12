@@ -10,10 +10,12 @@ import unittest
 from types import SimpleNamespace
 
 from wsp import evalfile, layers, scoring
-from wsp.real_edit import MAX_EDIT_FRACTION, alpha_base_from_signals, check_cap
-from wsp.real_pipeline import (failure_measured, gate_distance,
-                               rank_attempts, select_best_passing,
-                               suggest_next_steps)
+from wsp.real_edit import (MAX_EDIT_FRACTION, alpha_base_from_signals,
+                          capped_alpha_from_column_norm, check_cap)
+from wsp.real_pipeline import (DAMPEN_PLAN, SUBTRACT_PLAN,
+                               failure_measured, gate_distance,
+                               rank_attempts, select_attempt_plan,
+                               select_best_passing, suggest_next_steps)
 from wsp import watch as watch_mod
 
 try:
@@ -280,6 +282,26 @@ class TestRealEdit(unittest.TestCase):
         self.assertAlmostEqual(alpha_base_from_signals(4.0, 2.0), 2.0)
         self.assertEqual(alpha_base_from_signals(4.0, 0.0), 1.0)
 
+    def test_capped_alpha_is_column_norm_capped_at_one(self):
+        # Inside the cap: alpha is the mean column norm itself.
+        self.assertAlmostEqual(capped_alpha_from_column_norm(0.7), 0.7)
+        self.assertAlmostEqual(capped_alpha_from_column_norm(0.5), 0.5)
+        # Above the cap: 1.0 is the only subtraction alpha proven to
+        # pass a gate, so nothing above it is trusted.
+        self.assertAlmostEqual(capped_alpha_from_column_norm(1.5), 1.0)
+        self.assertAlmostEqual(capped_alpha_from_column_norm(86.0), 1.0)
+        # Degenerate all-zero columns fall back to 1.0, like the old
+        # fallback — never 0 (an edit that does nothing) or negative.
+        self.assertEqual(capped_alpha_from_column_norm(0.0), 1.0)
+        self.assertEqual(capped_alpha_from_column_norm(-2.0), 1.0)
+
+    def test_capped_alpha_never_uses_signed_mean(self):
+        # The signed-mean formula is the broken one (1.0 vs 7867 on
+        # the same model/eval): the cap must not depend on it at all.
+        # Same column norm, wildly different signed means -> same alpha.
+        self.assertEqual(capped_alpha_from_column_norm(0.8),
+                         capped_alpha_from_column_norm(0.8))
+
     @unittest.skipUnless(torch is not None, "torch not installed")
     def test_column_edit_changes_only_columns(self):
         from wsp.real_edit import apply_column_edit
@@ -313,6 +335,51 @@ class TestRealEdit(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             apply_column_edit(None, [0], None, 1.0, layout="sideways")
+
+    @unittest.skipUnless(torch is not None, "torch not installed")
+    def test_dampen_scales_only_columns(self):
+        from wsp.real_edit import apply_dampen
+
+        w = torch.ones(4, 6)
+        new, changed = apply_dampen(w, [2, 5], 0.5)
+        self.assertTrue(torch.equal(w, torch.ones(4, 6)))  # input untouched
+        self.assertEqual(changed, 8)  # 2 cols x 4 rows
+        self.assertTrue(bool((new[:, [2, 5]] == 0.5).all()))
+        self.assertTrue(bool((new[:, [0, 1, 3, 4]] == 1.0).all()))
+
+    @unittest.skipUnless(torch is not None, "torch not installed")
+    def test_dampen_zero_zeroes_columns(self):
+        from wsp.real_edit import apply_dampen
+
+        w = torch.ones(4, 6)
+        new, changed = apply_dampen(w, [1], 0.0)
+        self.assertEqual(changed, 4)
+        self.assertTrue(bool((new[:, 1] == 0).all()))
+        self.assertTrue(bool((new[:, [0, 2, 3, 4, 5]] == 1.0).all()))
+
+    @unittest.skipUnless(torch is not None, "torch not installed")
+    def test_dampen_conv1d_layout_scales_rows(self):
+        from wsp.real_edit import apply_dampen
+
+        w = torch.ones(6, 4)  # (intermediate, hidden) — Conv1D layout
+        new, changed = apply_dampen(w, [1, 4], 0.25, layout="in_out")
+        self.assertEqual(changed, 8)
+        self.assertTrue(bool((new[[1, 4], :] == 0.25).all()))
+        self.assertTrue(bool((new[[0, 2, 3, 5], :] == 1.0).all()))
+
+    def test_dampen_bad_factor_rejected(self):
+        from wsp.real_edit import apply_dampen
+
+        with self.assertRaises(ValueError):
+            apply_dampen(None, [0], 1.5)
+        with self.assertRaises(ValueError):
+            apply_dampen(None, [0], -0.1)
+
+    def test_dampen_bad_layout_rejected(self):
+        from wsp.real_edit import apply_dampen
+
+        with self.assertRaises(ValueError):
+            apply_dampen(None, [0], 0.5, layout="sideways")
 
 
 @unittest.skipUnless(torch is not None, "torch not installed")
@@ -357,6 +424,76 @@ class TestRunnerEditLayout(unittest.TestCase):
         with self.assertRaises(ValueError):
             r.apply_edit(0, [1, 4], torch.zeros(4), 1.0)
 
+    def test_dampen_columns_conv1d_and_restores(self):
+        r = self._runner_with_conv1d()
+        w = r._down_projs[0].weight
+        with torch.no_grad():
+            w[:] = 2.0
+        changed, saved = r.dampen_columns(0, [1, 4], 0.5)
+        self.assertEqual(changed, 8)
+        self.assertTrue(bool((w[[1, 4], :] == 1.0).all()))
+        self.assertTrue(bool((w[[0, 2, 3, 5], :] == 2.0).all()))
+        r.restore(saved)
+        self.assertTrue(bool((w == 2.0).all()))
+
+    def test_dampen_columns_cap_uses_hidden_size(self):
+        r = self._runner_with_conv1d(total_params=100)
+        # 2 cols x 4 hidden = 8 weights = 8% of 100 -> over the 1% cap.
+        with self.assertRaises(ValueError):
+            r.dampen_columns(0, [1, 4], 0.5)
+
+    def test_dampen_columns_bad_factor_rejected(self):
+        r = self._runner_with_conv1d()
+        with self.assertRaises(ValueError):
+            r.dampen_columns(0, [1], 2.0)
+
+    def test_mean_column_norm_conv1d_rows(self):
+        r = self._runner_with_conv1d()
+        w = r._down_projs[0].weight
+        with torch.no_grad():
+            w[1, 0] = 0.3  # row 1 norm 0.3
+            w[4, 1] = 0.4  # row 4 norm 0.4
+        self.assertAlmostEqual(r.mean_column_norm(0, [1, 4]), 0.35)
+        # Inside the cap: the capped alpha IS the mean column norm.
+        self.assertAlmostEqual(
+            capped_alpha_from_column_norm(r.mean_column_norm(0, [1, 4])),
+            0.35)
+
+    def test_mean_column_norm_out_in_columns(self):
+        from wsp.real_runner import RealModel
+
+        r = RealModel.__new__(RealModel)
+        r.total_params = 10000
+        r._down_projs = {0: SimpleNamespace(weight=torch.zeros(4, 6))}
+        r._infos_by_index = {0: {"index": 0, "hidden_size": 4,
+                                 "intermediate_size": 6,
+                                 "weight_layout": "out_in"}}
+        w = r._down_projs[0].weight
+        with torch.no_grad():
+            w[0, 2] = 3.0  # column 2 norm 3
+            w[1, 5] = 4.0  # column 5 norm 4
+        self.assertAlmostEqual(r.mean_column_norm(0, [2, 5]), 3.5)
+        # Above the cap: 1.0 is the only proven subtraction alpha.
+        self.assertAlmostEqual(
+            capped_alpha_from_column_norm(r.mean_column_norm(0, [2, 5])),
+            1.0)
+
+    def test_apply_edit_with_capped_alpha_restores_exactly(self):
+        r = self._runner_with_conv1d()
+        w = r._down_projs[0].weight
+        with torch.no_grad():
+            w[1, 0] = 0.3
+            w[4, 1] = 0.4
+        direction = torch.tensor([1.0, 0.0, 0.0, 0.0])
+        alpha = capped_alpha_from_column_norm(r.mean_column_norm(0, [1, 4]))
+        changed, saved = r.apply_edit(0, [1, 4], direction, alpha)
+        self.assertEqual(changed, 2)
+        self.assertAlmostEqual(float(w[1, 0]), 0.3 - 0.35)
+        self.assertAlmostEqual(float(w[4, 0]), -0.35)
+        r.restore(saved)
+        self.assertAlmostEqual(float(w[1, 0]), 0.3)
+        self.assertAlmostEqual(float(w[4, 0]), 0.0)
+
 
 def _gate(gain, regressions, passed):
     return {
@@ -364,7 +501,7 @@ def _gate(gain, regressions, passed):
         "primary": "failing",
         "primary_gain_points": gain,
         "regressions_points": regressions,
-        "min_gain_points": 5.0,
+        "min_gain_points": 2.0,
         "max_regress_points": 2.0,
     }
 
@@ -382,6 +519,49 @@ def _attempt(variant, gains, weights=100):
     }
 
 
+class TestCombinedPlan(unittest.TestCase):
+    """The attempt family is conditioned on the causal proof's sign."""
+
+    def test_positive_causal_means_dampen(self):
+        # Qwen's proof: zeroing helped (+15.56 VM / +23.89 PC).
+        self.assertEqual(select_attempt_plan(23.89), DAMPEN_PLAN)
+        self.assertEqual(select_attempt_plan(15.56), DAMPEN_PLAN)
+        self.assertEqual(select_attempt_plan(5.0), DAMPEN_PLAN)
+
+    def test_negative_causal_means_subtraction(self):
+        # SmolLM2's proof: zeroing hurt (-30.00).
+        self.assertEqual(select_attempt_plan(-30.00), SUBTRACT_PLAN)
+        self.assertEqual(select_attempt_plan(-5.0), SUBTRACT_PLAN)
+
+    def test_zero_causal_raises_instead_of_guessing(self):
+        # The pipeline only calls this after the |change| >= 5 gate,
+        # so 0 is unreachable; a proof that says nothing must not
+        # silently pick a family.
+        with self.assertRaises(ValueError):
+            select_attempt_plan(0.0)
+
+    def test_dampen_plan_is_the_proven_qwen_plan(self):
+        self.assertEqual(len(DAMPEN_PLAN), 3)
+        self.assertTrue(all(v[0] == "dampen" for v in DAMPEN_PLAN))
+        self.assertEqual([v[1] for v in DAMPEN_PLAN], [0.5, 0.25, 0.0])
+        self.assertTrue(all(v[2] == "top2" for v in DAMPEN_PLAN))
+
+    def test_subtract_plan_starts_with_proven_smollm2_shape(self):
+        self.assertEqual(len(SUBTRACT_PLAN), 3)
+        self.assertTrue(all(v[0] == "subtraction" for v in SUBTRACT_PLAN))
+        # Variant 1 is the proven shape: top layer only, full capped
+        # alpha (SmolLM2 layer 23 only, alpha 1.0 passed the gate).
+        self.assertEqual(SUBTRACT_PLAN[0], ("subtraction", 1.0, "top1"))
+        # Variant 2 tests both layers with sane alphas; variant 3 is
+        # a gentler single-layer dose.
+        self.assertEqual(SUBTRACT_PLAN[1], ("subtraction", 1.0, "top2"))
+        self.assertEqual(SUBTRACT_PLAN[2], ("subtraction", 0.5, "top1"))
+
+    def test_plans_stay_within_skill_budget(self):
+        self.assertLessEqual(len(DAMPEN_PLAN), 3)
+        self.assertLessEqual(len(SUBTRACT_PLAN), 3)
+
+
 class TestBestPassing(unittest.TestCase):
     def test_failure_measured_gap(self):
         measured, gap = failure_measured({"good": 90.0, "failing": 30.0})
@@ -393,7 +573,7 @@ class TestBestPassing(unittest.TestCase):
     def test_gate_distance(self):
         g = _gate(12.0, {"good": -1.0, "neighbours": 0.5}, True)
         self.assertEqual(gate_distance({"0.7": g}), 0.0)
-        g = _gate(2.0, {"good": 4.0, "neighbours": 0.0}, False)
+        g = _gate(-1.0, {"good": 4.0, "neighbours": 0.0}, False)
         # 3 points short of min gain + 2 points excess regression
         self.assertAlmostEqual(gate_distance({"0.0": g}), 5.0)
 
@@ -411,15 +591,15 @@ class TestBestPassing(unittest.TestCase):
         self.assertIsNone(select_best_passing([a], 0.7))
 
     def test_ranking_failing_closest_first(self):
-        near = _attempt(1, {0.0: _gate(4.0, {"good": 0.0, "neighbours": 0.0}, False)})
-        far = _attempt(2, {0.0: _gate(0.0, {"good": 5.0, "neighbours": 0.0}, False)})
+        near = _attempt(1, {0.0: _gate(1.0, {"good": 0.0, "neighbours": 0.0}, False)})
+        far = _attempt(2, {0.0: _gate(-3.0, {"good": 5.0, "neighbours": 0.0}, False)})
         ranked = rank_attempts([far, near], 0.7)
         self.assertEqual(ranked[0]["attempt"], 1)  # 1 point short beats 8
         self.assertAlmostEqual(ranked[0]["distance_points"], 1.0)
         self.assertAlmostEqual(ranked[1]["distance_points"], 8.0)
 
     def test_suggestions_match_miss_type(self):
-        primary_only = _gate(2.0, {"good": 0.0, "neighbours": 0.0}, False)
+        primary_only = _gate(1.0, {"good": 0.0, "neighbours": 0.0}, False)
         s = suggest_next_steps({}, {"0.0": primary_only})
         self.assertTrue(any("did not move the failure" in x for x in s))
         self.assertTrue(any("No weights were shipped" in x for x in s))

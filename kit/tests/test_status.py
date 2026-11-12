@@ -84,7 +84,9 @@ class StatusTest(unittest.TestCase):
         page = render_html(scan)
         self.assertNotIn("loop-fix-qwen3-0.6b", page)
         self.assertNotIn("loop-fix-gpt2-124m", page)
-        for banned in ("REFUSED", "FAILED", "failed", "refused",
+        # Lowercase "refused" is NOT banned: the denominator line
+        # ("K refused of T runs found here") uses it by design.
+        for banned in ("REFUSED", "FAILED", "failed",
                        "failure", "#dc2626", "#ef4444"):
             self.assertNotIn(banned, page, banned)
         self.assertIsNone(re.search(r"\bred\b", page, re.IGNORECASE),
@@ -102,10 +104,15 @@ class StatusTest(unittest.TestCase):
         scan = scan_reports(self.dir)
         self.assertEqual(len(scan["wins"]), 2)
         self.assertEqual(scan["real_passes"], 1)
+        self.assertEqual(scan["approved"], 0)
+        self.assertEqual(scan["quick_passes"], 2)
+        self.assertEqual(scan["refused"], 0)
+        self.assertEqual(scan["total"], 2)
         line = status_line(self.dir)
-        self.assertIn("2 approved improvements", line)
+        self.assertIn("0 Approved (standard evidence)", line)
+        self.assertIn("2 Quick check passed (not evidence)", line)
+        self.assertIn("0 refused of 2 runs found here", line)
         self.assertIn("best +11.29 (pipeline test)", line)
-        self.assertIn("1 real-model pass", line)
 
     def test_chip_idle_when_latest_run_did_not_pass(self):
         self._mk("kit", 10, passed=True, before=64.14, after=75.43,
@@ -137,9 +144,10 @@ class StatusTest(unittest.TestCase):
                      real=True, causal=32.22)
         self.assertEqual(
             status_line(self.dir),
-            "wsp-kit by Aurem \u25cf IDLE \u2014 1 approved improvement "
-            "\u00b7 best +11.29 (pipeline test) "
-            "\u00b7 0 real-model passes yet")
+            "wsp-kit by Aurem \u25cf IDLE \u2014 0 Approved "
+            "(standard evidence), 1 Quick check passed (not evidence), "
+            "4 refused of 5 runs found here "
+            "\u00b7 best +11.29 (pipeline test)")
 
     def test_no_reports(self):
         self.assertEqual(status_line(self.dir),
@@ -151,7 +159,8 @@ class StatusTest(unittest.TestCase):
                  real=True, causal=32.22)
         self.assertIn("no approved improvements yet",
                       status_line(self.dir))
-        self.assertIn("1 run completed", status_line(self.dir))
+        self.assertIn("1 refused of 1 runs found here",
+                      status_line(self.dir))
 
     def test_non_report_json_is_ignored(self):
         junk = os.path.join(self.dir, "junk", "report.json")

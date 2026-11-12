@@ -1,6 +1,6 @@
 """wsp-kit: weight-space programming you can run.
 
-Version 0.2.0. The public interface is the CLI (``wsp demo`` for the
+Version 0.3.0. The public interface is the CLI (``wsp demo`` for the
 kit, ``wsp auto`` for easy mode — 4 questions, then the kit runs by
 itself — ``wsp run`` for any open-weight model, ``wsp loop`` to keep
 improving in the background, ``wsp serve-model`` to serve one model
@@ -11,5 +11,5 @@ is stable: later versions add fields, they do not rename or remove
 existing ones, so harnesses built against v1 keep working.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 REPORT_VERSION = 1
