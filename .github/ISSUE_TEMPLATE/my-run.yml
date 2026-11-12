@@ -1,0 +1,51 @@
+name: My run
+description: Share what happened when you ran wsp-kit, including when the gate said no
+title: "My run: <model> / <failure>"
+labels: ["community-run"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A refusal is a real result. Please share it too.
+  - type: input
+    id: model
+    attributes:
+      label: Model
+      placeholder: Qwen/Qwen3-0.6B
+    validations:
+      required: true
+  - type: input
+    id: failure
+    attributes:
+      label: The failure you tried to fix
+      placeholder: 60-item list looping
+    validations:
+      required: true
+  - type: dropdown
+    id: verdict
+    attributes:
+      label: Gate verdict
+      options:
+        - Passed (edit shipped)
+        - Refused (nothing shipped)
+        - Did not finish
+    validations:
+      required: true
+  - type: input
+    id: numbers
+    attributes:
+      label: Failing score before -> after (and weights changed)
+      placeholder: 37.78 -> 67.22, 131072 weights
+  - type: textarea
+    id: report
+    attributes:
+      label: report.json (paste, or attach)
+      render: json
+  - type: input
+    id: reel
+    attributes:
+      label: Link to your reel/post (optional)
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything surprising?
