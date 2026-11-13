@@ -41,6 +41,51 @@
         "https://github.com/AuremHQ/ora-grounding",
         "https://www.linkedin.com/in/tejinder-sandhu-156a3a181"
       ]
+    }    ,
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How to fine-tune a small language model?",
+          "acceptedAnswer": { "@type": "Answer", "text": "With weight-space programming: a tiny, targeted fix to a small number of the model's weights (1% cap), checked by a gate that only keeps the fix if it actually helps. wsp-kit does this for free, open-source, on your own laptop." }
+        },
+        {
+          "@type": "Question",
+          "name": "What is fine-tuning an LLM?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Training a model a little more on your data or task so it gets better at it. wsp-kit does a small, gated version of this for small open-weight models." }
+        },
+        {
+          "@type": "Question",
+          "name": "What is fine-tuning in LLM vs RAG?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Fine-tuning changes the model's weights. RAG gives the model documents at run time without changing any weights. Use fine-tuning when the model itself needs to get better; use RAG when it needs facts." }
+        },
+        {
+          "@type": "Question",
+          "name": "Which LLM is best for fine-tuning?",
+          "acceptedAnswer": { "@type": "Answer", "text": "For this kit: small open-weight models. Tested examples that passed the kit's gate in real runs: SmolLM2 and Qwen." }
+        },
+        {
+          "@type": "Question",
+          "name": "Can ChatGPT be fine-tuned?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes, through OpenAI's fine-tuning — paid and closed. wsp-kit is different: it is for open-weight models on your own laptop, free and open-source." }
+        },
+        {
+          "@type": "Question",
+          "name": "Is fine-tuning still relevant?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes, especially for small models. Big models are expensive to fine-tune; small models are cheap to improve, and the kit proves the gain with its gate." }
+        },
+        {
+          "@type": "Question",
+          "name": "How to fine-tune an LLM — example?",
+          "acceptedAnswer": { "@type": "Answer", "text": "The kit itself is the example: github.com/AuremHQ/weight-space-programming — free, with worked examples." }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I learn ML on my own? Where can I learn ML for free?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. Free resources exist, and the kit's own docs are a practical starting point: you learn by fixing a real small model." }
+        }
+      ]
     }
   ]
 }
@@ -358,6 +403,38 @@ wsp serve-model --model Qwen/Qwen3-0.6B --versions-dir ./wsp-loop-out</pre>
       <summary>Can I undo an edit?</summary>
       <p>Yes. Original weights are never overwritten: edited weights go to a new directory, and applying an edit is a separate step (<code>wsp apply-edit</code>). On a live model, <code>POST /rollback</code> undoes the last applied edit.</p>
     </details>
+    <details>
+      <summary>How to fine-tune a small language model?</summary>
+      <p>With weight-space programming: a tiny, targeted fix to a small number of the model's weights (1% cap), checked by a gate that only keeps the fix if it actually helps. wsp-kit does this for free, open-source, on your own laptop.</p>
+    </details>
+    <details>
+      <summary>What is fine-tuning an LLM?</summary>
+      <p>Training a model a little more on your data or task so it gets better at it. wsp-kit does a small, gated version of this for small open-weight models.</p>
+    </details>
+    <details>
+      <summary>What is fine-tuning in LLM vs RAG?</summary>
+      <p>Fine-tuning changes the model's weights. RAG gives the model documents at run time without changing any weights. Use fine-tuning when the model itself needs to get better; use RAG when it needs facts.</p>
+    </details>
+    <details>
+      <summary>Which LLM is best for fine-tuning?</summary>
+      <p>For this kit: small open-weight models. Tested examples that passed the kit's gate in real runs: <strong>SmolLM2</strong> and <strong>Qwen</strong>.</p>
+    </details>
+    <details>
+      <summary>Can ChatGPT be fine-tuned?</summary>
+      <p>Yes, through OpenAI's fine-tuning — paid and closed. wsp-kit is different: it is for open-weight models on your own laptop, free and open-source.</p>
+    </details>
+    <details>
+      <summary>Is fine-tuning still relevant?</summary>
+      <p>Yes, especially for small models. Big models are expensive to fine-tune; small models are cheap to improve, and the kit proves the gain with its gate.</p>
+    </details>
+    <details>
+      <summary>How to fine-tune an LLM — example?</summary>
+      <p>The kit itself is the example: <a href="https://github.com/AuremHQ/weight-space-programming">github.com/AuremHQ/weight-space-programming</a> — free, with worked examples.</p>
+    </details>
+    <details>
+      <summary>Can I learn ML on my own? Where can I learn ML for free?</summary>
+      <p>Yes. Free resources exist, and the kit's own docs are a practical starting point: you learn by fixing a real small model.</p>
+    </details>
   </section>
 </div>
 </main>
@@ -378,3 +455,4 @@ wsp serve-model --model Qwen/Qwen3-0.6B --versions-dir ./wsp-loop-out</pre>
 </footer>
 </body>
 </html>
+
