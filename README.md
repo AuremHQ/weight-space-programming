@@ -11,7 +11,7 @@
 - **Result:** Qwen 37.78 → 67.22 (+29.44); SmolLM2 76.11 → 85.56 (+9.44). Good and neighbours stayed at 100.
 - **Gate:** 2 of 7 runs passed. The other 5 were refused and shipped 0 weights.
 - **Proof:** every run, pass and fail, is published in [REAL-RUNS.md](REAL-RUNS.md).
-- **Last updated 7 November 2026** — numbers current as of 6 November 2026.
+- **Last updated 22 November 2026** — numbers current as of 6 November 2026 (no new runs since).
 
 > **wsp-kit by Aurem** — an engineering tool for small models. Try to fix small AI models by editing their weights directly — no retraining, no fine-tuning, no gradients — with an eval gate deciding whether any edit ships.
 
@@ -208,6 +208,7 @@ Your app talks to the live model at `http://127.0.0.1:8900` (`POST /generate`). 
 - Demonstrated so far mainly with **one editor model (GPT-6 Astra)**. Whether other models do this equally well is **unproven** — our reports name the editor behind every run (ours is a numerical estimator, no LLM).
 - This is a **batch job, not real-time**: load weights, run evaluations, reason, edit, re-evaluate. It never runs live inside a chat reply.
 - **Two real-model edits have passed the gate** (SmolLM2 +9.44, Qwen narrow +29.44) — and five runs ended with the gate refusing and nothing shipping. That is published above, not hidden.
+- **No held-out check yet.** The eval gate re-runs the *same* prompts with the *same* settings — that is what this README says, and it is what the kit does today. When several candidates are tried for the same failure, the selected edit is not yet tested on a fresh set of prompts. The paper's own method used practice problems to test candidates, a reserved check before submitting, then 490 held-out problems. That is a real gap in this kit, and adding a held-out check is the next gate step. Raised by the paper's first author, Jiajun Fan, in [Discussion #1](https://github.com/AuremHQ/weight-space-programming/discussions/1).
 
 ---
 
