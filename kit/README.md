@@ -21,6 +21,9 @@ seconds, with nothing to configure:
 curl -fsSL https://raw.githubusercontent.com/AuremHQ/weight-space-programming/main/install.sh | bash
 ```
 
+Prefer to read the script before running it? Download it first, read it,
+then run it — `install.sh --help` shows the exact two-step command.
+
 Then fix your own model with one command:
 
 ```
@@ -400,9 +403,9 @@ old one, never as a silent replacement.
   reason, edit, re-evaluate. It never runs live inside a chat reply.
 - Editing removes obstacles; it does not add abilities. A model that
   never had a capability will not gain it from an edit.
-- Weight edits can bypass safety behaviour. That is why safety-removal
-  requests are refused and every edit goes through evaluation and
-  human review.
+- Editing weights can weaken a model's safety behaviour. That is why
+  requests to remove or disable it are refused, and why every edit
+  goes through evaluation and human review.
 - Real runs are live (Qwen + GPT-2 + SmolLM2, see the repo's REAL-RUNS.md) —
   7 real runs, 2 gate passes (SmolLM2 +9.44, Qwen narrow +29.44). The
   other 5 runs were refused by the gate and shipped 0 weights.

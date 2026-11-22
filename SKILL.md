@@ -68,7 +68,7 @@ Merging is a different mode from the surgical editing in Steps 0–3. Never mix 
 
 ## Safety rules
 
-- Weight edits can bypass safety behaviour. That is why safety-removal requests are refused and why every edit goes through evaluation and human review.
+- Editing weights can weaken a model's safety behaviour, which is why we refuse any request to remove or disable it, and why every edit goes through evaluation and human review.
 - Never claim an edit "adds knowledge" or "makes the model smarter." Describe only what was measured: which failure was diagnosed, which direction was removed, and what the numbers show.
 - Log every attempt (success or discarded): who asked, which model, layers touched, tools used, eval passes spent, before/after metrics, and whether anything shipped.
 
