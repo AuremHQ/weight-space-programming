@@ -11,7 +11,7 @@
 - **Result:** Qwen 37.78 → 67.22 (+29.44); SmolLM2 76.11 → 85.56 (+9.44). Good and neighbours stayed at 100.
 - **Gate:** 2 of 7 runs passed. The other 5 were refused and shipped 0 weights.
 - **Proof:** every run, pass and fail, is published in [REAL-RUNS.md](REAL-RUNS.md).
-- **Last updated 22 November 2026** — numbers current as of 6 November 2026 (no new runs since).
+- **Last updated 24 November 2026** — numbers current as of 6 November 2026 (no new runs since). 22 Nov: we replied to the paper's first author, Jiajun Fan, in [Discussion #1](https://github.com/AuremHQ/weight-space-programming/discussions/1) — honest "no held-out check yet". Repo: 19 stars, 3 forks.
 
 > **wsp-kit by Aurem** — an engineering tool for small models. Try to fix small AI models by editing their weights directly — no retraining, no fine-tuning, no gradients — with an eval gate deciding whether any edit ships.
 
