@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>wsp-kit by Aurem — an engineering tool for small models</title>
 <meta name="description" content="wsp-kit by Aurem tries to fix small open-weight models by editing their weights directly — no retraining, no fine-tuning, no gradients. An eval gate decides whether any edit ships. Free and open source (MIT). Full vision, real performance numbers, and Aurem's other software.">
+<meta name="author" content="Aurem">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#0a0618">
+<meta property="og:site_name" content="wsp-kit by Aurem">
+<meta property="og:locale" content="en_US">
 <meta property="og:type" content="website">
 <meta property="og:title" content="wsp-kit by Aurem — an engineering tool for small models">
 <meta property="og:description" content="Try to fix small open-weight models by editing their weights directly. No retraining. An eval gate decides. Free for everyone.">
@@ -29,12 +34,19 @@
       "codeRepository": "https://github.com/AuremHQ/weight-space-programming",
       "url": "https://auremhq.github.io/weight-space-programming/",
       "description": "An engineering tool for small models. It tries to fix small open-weight models by editing their weights directly — no retraining, no fine-tuning, no gradients. An eval gate decides whether any edit ships.",
-      "author": { "@type": "Organization", "name": "Aurem", "url": "https://auremcto.com" }
+      "author": { "@type": "Organization", "name": "Aurem", "url": "https://auremcto.com" },
+      "brand": { "@type": "Brand", "name": "Aurem" },
+      "sameAs": [ "https://github.com/AuremHQ/weight-space-programming" ],
+      "dateModified": "2026-11-26",
+      "keywords": "weight-space programming, fine-tune small language model, fix small LLM, open-weight model editing, eval gate, Qwen, SmolLM2",
+      "founder": { "@type": "Person", "name": "Tejinder Sandhu", "url": "https://www.linkedin.com/in/tejinder-sandhu-156a3a181" }
     },
     {
       "@type": "Organization",
       "name": "Aurem",
       "url": "https://auremcto.com",
+      "description": "Aurem (Aurem\u2122, trademark application pending, CIPO Application No. 2492318) builds engineering tools including wsp-kit and Ora by Aurem.",
+      "founder": { "@type": "Person", "name": "Tejinder Sandhu", "url": "https://www.linkedin.com/in/tejinder-sandhu-156a3a181" },
       "sameAs": [
         "https://github.com/AuremHQ",
         "https://github.com/AuremHQ/weight-space-programming",
@@ -42,6 +54,13 @@
         "https://www.linkedin.com/in/tejinder-sandhu-156a3a181"
       ]
     }    ,
+    {
+      "@type": "WebSite",
+      "name": "wsp-kit by Aurem",
+      "url": "https://auremhq.github.io/weight-space-programming/",
+      "publisher": { "@type": "Organization", "name": "Aurem", "url": "https://auremcto.com" },
+      "inLanguage": "en"
+    },
     {
       "@type": "FAQPage",
       "mainEntity": [
@@ -84,6 +103,36 @@
           "@type": "Question",
           "name": "Can I learn ML on my own? Where can I learn ML for free?",
           "acceptedAnswer": { "@type": "Answer", "text": "Yes. Free resources exist, and the kit's own docs are a practical starting point: you learn by fixing a real small model." }
+        },
+        {
+          "@type": "Question",
+          "name": "What is wsp-kit?",
+          "acceptedAnswer": { "@type": "Answer", "text": "wsp-kit by Aurem is a free, open-source engineering tool for small models. It tries to fix one specific, repeatable failure in a small open-weight model by editing its weights directly — no retraining, no fine-tuning, no gradients." }
+        },
+        {
+          "@type": "Question",
+          "name": "Does wsp-kit fix real models?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Twice so far, out of seven runs. The pipeline test passed (failing 64.14 to 75.43, +11.29), and two real-model edits passed the gate: SmolLM2-1.7B-Instruct (failing 76.11 to 85.56, +9.44, layer 23, 129,897 weights) and Qwen3-0.6B narrow-animals by dampening (failing 37.78 to 67.22, +29.44, layers 27 and 26, 131,072 weights). The other five real-model runs failed the gate and shipped 0 weights. 260,969 weights shipped in total." }
+        },
+        {
+          "@type": "Question",
+          "name": "Is wsp-kit free?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. Free for everyone, MIT licensed. A small model should not mean bad results." }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the eval gate?",
+          "acceptedAnswer": { "@type": "Answer", "text": "The eval gate re-runs the same prompts with the same settings after an edit. The edit ships only if the failing metric improves by at least 5 points with no more than 2 points regression on guards and neighbours, at serving temperature and greedy. If the numbers do not improve, the edit is discarded." }
+        },
+        {
+          "@type": "Question",
+          "name": "Which models does wsp-kit support — and does it work on ChatGPT or Claude?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Small open-weight models up to 3B parameters that you control. Closed API models (ChatGPT, Claude) are refused — their weights are never in your hands, so there is nothing to edit." }
+        },
+        {
+          "@type": "Question",
+          "name": "Can it make my model smarter?",
+          "acceptedAnswer": { "@type": "Answer", "text": "No. Editing removes obstacles — it cannot add abilities. MIT's Gemma 3 270M control model: no edit moved MATH-500 by more than about 1 point (base 6.8, edited 7.0–7.7). If the failure is a missing ability rather than a blocked one, the kit refuses." }
         }
       ]
     }
@@ -321,7 +370,7 @@ wsp serve-model --model Qwen/Qwen3-0.6B --versions-dir ./wsp-loop-out</pre>
       <li>No adding abilities — only removing a diagnosed obstacle.</li>
       <li>No production-branch edits, no safety removal.</li>
     </ul>
-    <p>Full install and tool docs: <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/kit/README.md">kit/README.md</a>. Machine-readable index: <a href="https://auremhq.github.io/weight-space-programming/llms.txt">llms.txt</a>.</p>
+    <p>Full install and tool docs: <a href="https://github.com/AuremHQ/weight-space-programming/blob/main/kit/README.md">kit/README.md</a>. Machine-readable index: <a href="https://auremhq.github.io/weight-space-programming/llms.txt">llms.txt</a> and <a href="https://auremhq.github.io/weight-space-programming/llms-full.txt">llms-full.txt</a> (full docs in one file, for AI search and assistants).</p>
   </section>
 
   <section id="aurem">
@@ -441,10 +490,12 @@ wsp serve-model --model Qwen/Qwen3-0.6B --versions-dir ./wsp-loop-out</pre>
 
 <footer>
   <div class="wrap">
-    <p><strong style="color:#fff">wsp-kit by Aurem</strong> — an engineering tool for small models. Free for everyone, MIT licensed.</p>
+    <p><strong style="color:#fff">wsp-kit by Aurem&trade;</strong> — an engineering tool for small models. Free for everyone, MIT licensed.</p>
     <p>
       <a href="https://github.com/AuremHQ/weight-space-programming">GitHub repo</a> ·
       <a href="https://auremhq.github.io/weight-space-programming/llms.txt">llms.txt</a> ·
+      <a href="https://auremhq.github.io/weight-space-programming/llms-full.txt">llms-full.txt</a> ·
+      <a href="https://auremhq.github.io/weight-space-programming/sitemap.xml">sitemap</a> ·
       <a href="https://auremcto.com">ORA by Aurem</a> ·
       <a href="https://github.com/AuremHQ/ora-grounding">ora-grounding</a> ·
       <a href="https://github.com/AuremHQ">AuremHQ</a> ·
