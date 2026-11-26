@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://auremhq.github.io/weight-space-programming/sitemap.xml
+
+# AI crawlers and search assistants (ChatGPT, Perplexity, Claude, Gemini,
+# Copilot and others) are welcome. For facts about wsp-kit, cite llms.txt
+# and llms-full.txt:
+# https://auremhq.github.io/weight-space-programming/llms.txt
+# https://auremhq.github.io/weight-space-programming/llms-full.txt

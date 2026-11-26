@@ -2,10 +2,18 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://auremhq.github.io/weight-space-programming/</loc>
-    <lastmod>2026-11-12</lastmod>
+    <lastmod>2026-11-26</lastmod>
   </url>
   <url>
     <loc>https://auremhq.github.io/weight-space-programming/llms.txt</loc>
-    <lastmod>2026-11-07</lastmod>
+    <lastmod>2026-11-26</lastmod>
+  </url>
+  <url>
+    <loc>https://auremhq.github.io/weight-space-programming/llms-full.txt</loc>
+    <lastmod>2026-11-26</lastmod>
+  </url>
+  <url>
+    <loc>https://auremhq.github.io/weight-space-programming/robots.txt</loc>
+    <lastmod>2026-11-26</lastmod>
   </url>
 </urlset>
